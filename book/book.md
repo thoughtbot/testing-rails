@@ -1,14 +1,14 @@
-% Your Title Goes Here
-% Author Name
+% Testing Rails
+% Josh Steiner
 
 \clearpage
 
-An introduction chapter
-
 \mainmatter
 
-\part{First Part}
+# Introduction
 
-# Chapter One
+<<[introduction/why_test.md]
 
-Here's some text for the first chapter.
+<<[introduction/test_driven_development.md]
+
+<<[introduction/characteristics_of_an_effective_test_suite.md]
