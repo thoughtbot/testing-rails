@@ -3,6 +3,25 @@
 
 \clearpage
 
+This sample contains a few hand-picked chapters, published directly from the
+book, allowing you to get a sense of the content, style, and delivery of the
+product.
+
+If you enjoy the sample, you can get access to the entire book at:
+
+<http://www.testingrailsbook.com>
+
+As a purchaser of the book, you also get access to:
+
+* Multiple formats, including HTML, PDF, EPUB and Kindle.
+* Access to a GitHub repository to receive updates as soon as they're pushed.
+* Access to GitHub Issues, where you can provide feedback and tell us what you'd
+  like to see.
+
+<<[otherbooks.md]
+
+\clearpage
+
 \mainmatter
 
 # Introduction
