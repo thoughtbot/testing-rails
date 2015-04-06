@@ -14,3 +14,5 @@
 <<[introduction/characteristics_of_an_effective_test_suite.md]
 
 <<[introduction/example_app.md]
+
+<<[introduction/rspec.md]

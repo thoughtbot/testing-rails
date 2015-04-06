@@ -15,9 +15,9 @@ the entire change is not included in the chapter for the sake of focus and
 brevity. However, you can see every change made for a solution in the example
 commits.
 
-The book is broken into chapters for each type of test, which makes it
-easier to use as a referrence and learn about each kind of test step by step.
-However, it does make it more challenging to see how a feature is developed that
+The book is broken into chapters for specific topics in testing, which makes it
+easier to use as a referrence and learn about each part step by step. However,
+it does make it more challenging to see how a single feature is developed that
 requires multiple types of tests. To get a sense of how features develop
 naturally please check out the app's [commit history] to see the code evolve one
 feature at a time.
