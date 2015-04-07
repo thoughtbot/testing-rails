@@ -147,14 +147,14 @@ ways, that's great!
 Here are some reasons you might _not_ test drive, or even test, your code:
 
 * The feature you are trying to implement is outside your wheelhouse, and you
-  want to code an exploritory version before you can write your test. We call a
+  want to code an exploratory version before you can write your test. We call a
   quick implementation like this a spike. After writing your spike, you may
   then choose to implement the associated test. If you implement the test after
   your production code, you should at the very least toggle some code that would
   make it fail in an expected way. This way, you can be certain it is testing the
   correct thing.  Alternatively, you may want to start from scratch with your new
   knowledge and implement it as part of a TDD cycle.
-* The entire program is small unlikely to change. If it's small enough to test
+* The entire program is small or unlikely to change. If it's small enough to test
   by hand efficiently, you may elect to forego testing.
 * The program will only be used for a short time. If you plan to throw out the
   program soon, it will be unlikely to change enough to warrant regression
