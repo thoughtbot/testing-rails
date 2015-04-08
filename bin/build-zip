@@ -1,0 +1,2 @@
+#!/bin/sh
+cd build && find . \! -name '*-sample*' -exec zip ../testing-rails.zip {} +
