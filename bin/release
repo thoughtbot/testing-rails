@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+./bin/build
+
+find build \
+  -mindepth 2 -maxdepth 2 \! -name '*-sample*' \
+  -exec cp -Rv {} release/ \;
+
+# https://github.com/pbrisbin/vbump
+tag="$(git tag | ../vbump/bin/vbump "${1:-patch}")"
+git add release
+git commit -m "Releasing $tag"
+git tag -m "$tag" "$tag"
