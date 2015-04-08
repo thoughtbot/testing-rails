@@ -2,9 +2,10 @@
 
 This book comes with a bundled [example application], a Reddit clone called
 Reddat. If you are unfamiliar with Reddit, it is an online community for posting
-links and text posts. People can then comment on and upvote those posts. Make
-sure that you sign into GitHub before attempting to view the example application
-and commit links, or you'll receive a 404 error.
+links and text posts. People can then comment on and upvote those posts. Ours
+will be a simplified version with no users (anyone can post) and only link
+posts. Make sure that you sign into GitHub before attempting to view the example
+application and commit links, or you'll receive a 404 error.
 
 [example application]: https://github.com/thoughtbot/testing-rails/tree/master/example_app
 
