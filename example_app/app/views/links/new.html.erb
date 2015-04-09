@@ -1,4 +1,6 @@
 <%= form_for @link do |form| %>
+  <%= render "error_messages", target: @link %>
+
   <div>
     <%= form.label :title %>
     <%= form.text_field :title %>
