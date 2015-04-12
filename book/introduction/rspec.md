@@ -46,7 +46,7 @@ Bundle install:
 bundle install
 ```
 
-Generate rspec files:
+Generate RSpec files:
 
 ```
 rails generate rspec:install
