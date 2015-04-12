@@ -68,7 +68,7 @@ By working inwards instead of outwards, you ensure that you never write more
 code than necessary, because there is a clear end. Once the acceptance test
 is green, there is no more code to write!
 
-Working outside-in is desireable when you have a good understanding of the
+Working outside-in is desirable when you have a good understanding of the
 problem, and have a rough understanding of how the interface and code will work
 ahead of time. Because you are starting from a high level, your code will not
 work until the very end, however your first test will guide your design all the
@@ -128,7 +128,7 @@ to do next, which can almost make programming seem robotic.
 #### Improved Design
 
 That TDD itself improves design is arguable (and many have argued it). In
-reality, a knowledge of object oriented design priciples paired with TDD
+reality, a knowledge of object oriented design principles paired with TDD
 aids design. TDD helps you recognize coupling up front. Object oriented design
 principles, like dependency injection, help you write your code in ways that
 reduce this coupling, making your code easier to test. It turns out that code
@@ -137,7 +137,7 @@ perfect sense, because our tests run against our code and good code is reusable.
 
 ### A Pragmatic Approach
 
-There's a lot of dogmatism surrounding the excercise of TDD. We believe that TDD
+There's a lot of dogmatism surrounding the exercise of TDD. We believe that TDD
 is often the best choice for all the reasons above; however, you must always
 consider the tradeoffs. Sometimes, TDD doesn't make sense or simply isn't worth
 it. In the end, the most important thing is that you can feel confident that
