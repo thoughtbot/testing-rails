@@ -25,5 +25,5 @@ Dir.chdir APP_ROOT do
   system "rm -rf tmp/cache"
 
   puts "\n== Restarting application server =="
-  system "touch tmp/restart.txt"
+  system "touch tmp/restart.txt > /dev/null 2>&1"
 end
