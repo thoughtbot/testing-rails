@@ -19,7 +19,7 @@ is such an inconvenience that you stop running your tests altogether.
 Tests cover all public code paths in your application. You should not be able to
 remove publicly accessible code from your production app without seeing test
 failures. If you aren't sufficiently covered, you can't make changes and be
-confident they won't break things. This makes is difficult to maintain your
+confident they won't break things. This makes it difficult to maintain your
 codebase.
 
 ### Reliable
