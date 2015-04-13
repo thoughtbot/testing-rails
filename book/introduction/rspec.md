@@ -71,11 +71,13 @@ This creates the following files:
     configurations that need to be loaded for a subset of your test suite,
     consider making a separate helper file and load it only in those files.
 
-    At the bottom of this file is a comment block the RSpec maintainers suggest we
-    enable for a good experience. We agree with all of the customizations, so I've
-    [commented them in].
+    At the bottom of this file is a comment block the RSpec maintainers suggest
+    we enable for a better experience. We agree with most of the customizations.
+    I've [uncommented them], then [commented out a few specific settings] to
+    reduce some noise in test output.
 
-[commented them in]: https://github.com/thoughtbot/testing-rails/commit/572ddcebcf86c74687ced40ddb0aad234f6e9657
+[uncommented them]: https://github.com/thoughtbot/testing-rails/commit/572ddcebcf86c74687ced40ddb0aad234f6e9657
+[commented out a few specific settings]: https://github.com/thoughtbot/testing-rails/commit/f5a18edd7ebecbc4c30b7a2038f1ae5c99455dc6
 
 * [`spec/rails_helper.rb`](https://github.com/thoughtbot/testing-rails/blob/b86752a0690a2800c6f57e23974bfe11c8b5fe28/example_app/spec/rails_helper.rb)
 
