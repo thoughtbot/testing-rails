@@ -1,7 +1,7 @@
 require "rails_helper"
 
-RSpec.feature "User creates a link" do
-  scenario "they see the page for the created link" do
+RSpec.feature "User submits a link" do
+  scenario "they see the page for the submitted link" do
     link_title = "This Testing Rails book is awesome!"
     link_url = "http://testingrailsbook.com"
 
