@@ -16,3 +16,7 @@
 <<[introduction/example_app.md]
 
 <<[introduction/rspec.md]
+
+# Types of Tests
+
+<<[types_of_tests/feature_specs.md]
