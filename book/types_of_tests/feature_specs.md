@@ -58,7 +58,7 @@ require "capybara/rails"
 With that installed, we're ready to write our spec. Take a look at the completed
 version. We'll go through it line by line:
 
-` spec/features/user_submits_a_link_spec.rb@831e7a9e
+` spec/features/user_submits_a_link_spec.rb@c20b7009
 
 Create a new file at `spec/features/user_submits_a_link_spec.rb`.
 
@@ -85,7 +85,7 @@ because old versions of RSpec used monkeypatching to define top level methods on
 `config.disable_monkey_patching!`, as this will be the default functionality in
 future versions of RSpec.
 
-[commenting in]: https://github.com/thoughtbot/testing-rails/blob/6540e7d25a01e3dae6c65680d958ec627c8e702a/example_app/spec/spec_helper.rb#L53
+[commenting in]: https://github.com/thoughtbot/testing-rails/blob/e03ef3ca8150d8d28c4cdf760f53d11070447b67/example_app/spec/spec_helper.rb#L53
 
 `.feature` takes a string, which you use to describe your feature. We'll usually
 name this the same thing as we named our file and create a new file for every
@@ -321,11 +321,9 @@ NameError:
 ```
 
 It looks like `root_path` is undefined. This helper method comes from Rails when
-you [define the route] in `config/routes.rb`. We want our homepage to show all
-of the links that have been submitted, so it will point to the `index` action of
+you define the route in `config/routes.rb`. We want our homepage to show all of
+the links that have been submitted, so it will point to the `index` action of
 our `LinksController`:
-
-[define the route]: https://github.com/thoughtbot/testing-rails/commit/831e7a9e620c4d5d35f4f9f062def7b437126843#diff-b3ca36993330dbdade67e1564f10c872R4
 
 ```ruby
 root to: "links#index"
@@ -460,4 +458,4 @@ see, you should run the tests.
 I'll leave the implementation of the rest of this feature as an exercise for the
 reader. Take a peak at [my commit] if you get stuck.
 
-[my commit]: https://github.com/thoughtbot/testing-rails/commit/831e7a9e620c4d5d35f4f9f062def7b437126843
+[my commit]: https://github.com/thoughtbot/testing-rails/commit/c20b7009e46454070e87156a9947be39f08040f9

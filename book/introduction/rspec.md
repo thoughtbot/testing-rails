@@ -77,7 +77,8 @@ This creates the following files:
     reduce some noise in test output.
 
 [uncommented them]: https://github.com/thoughtbot/testing-rails/commit/572ddcebcf86c74687ced40ddb0aad234f6e9657
-[commented out a few specific settings]: https://github.com/thoughtbot/testing-rails/commit/f5a18edd7ebecbc4c30b7a2038f1ae5c99455dc6
+[commented out a few specific settings]: https://github.com/thoughtbot/testing-rails/commit/1c5e29def9e64d4e67abb5a0867c67348468ab5b
+
 
 * [`spec/rails_helper.rb`](https://github.com/thoughtbot/testing-rails/blob/b86752a0690a2800c6f57e23974bfe11c8b5fe28/example_app/spec/rails_helper.rb)
 
