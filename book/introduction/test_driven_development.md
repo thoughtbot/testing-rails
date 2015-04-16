@@ -19,7 +19,7 @@ You don't have to know what your code looks like at this point, you just have to
 know what it will do. Run the test. You should see it fail. Most test runners
 will output red for failure and green for success. While we say "failure" do not
 take this negatively. It's a good sign! By seeing the test fail first, we know
-that once we make it pass, our code works!
+that once we make it pass, our code works.
 
 #### Green
 
