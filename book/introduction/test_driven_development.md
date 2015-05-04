@@ -30,9 +30,8 @@ until the test passes. This may involve writing intermediary features covering
 lower level functionality which require their own Red, Green, Refactor cycle.
 
 Do not focus on code quality at this point. Be shameless! We simply want to get
-our new test passing. Strictly speaking, this includes things like returning
-literal values that are expected to force yourself to write additional tests
-that cover multiple cases.
+our new test passing. This may involve returning literal values from methods,
+which will force you to write additional tests to cover all cases.
 
 #### Refactor
 
