@@ -11,3 +11,5 @@ is where we'll typically start.
 <<[types_of_tests/feature_specs/submitting_an_invalid_link.md]
 
 <<[types_of_tests/feature_specs/viewing_the_homepage.md]
+
+<<[types_of_tests/feature_specs/voting_on_links.md]

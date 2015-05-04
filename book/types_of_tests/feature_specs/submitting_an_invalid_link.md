@@ -3,7 +3,7 @@
 All links should have a title and URL, so we should prevent users from
 submitting invalid links. Since this is part of the "User submits a link"
 feature, we can add it to the same feature block under a different scenario. A
-basic integration test might look like this:
+basic feature spec might look like this:
 
 ` spec/features/user_submits_a_link_spec.rb@5ed398161:17,28
 
