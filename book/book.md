@@ -20,3 +20,5 @@
 # Types of Tests
 
 <<[types_of_tests/feature_specs.md]
+
+<<[types_of_tests/model_specs.md]
