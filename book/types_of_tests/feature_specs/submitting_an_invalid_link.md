@@ -31,10 +31,10 @@ page for the given text, ignoring any HTML tags.
 #### Passing the test
 
 As always, I'll run the test now and follow the error messages to a solution.
-I'll leave this up to the reader, but feel free to check out the [associated
-commit] to see what I did.
+I'll leave this up to the reader, but feel free to check out [the commit] to see
+what I did.
 
-[associated commit]: https://github.com/thoughtbot/testing-rails/commit/5ed3981619066bb71c1b8f4b17647c57aebd2707
+[the commit]: https://github.com/thoughtbot/testing-rails/commit/5ed3981619066bb71c1b8f4b17647c57aebd2707
 
 #### Four Phase Test
 
