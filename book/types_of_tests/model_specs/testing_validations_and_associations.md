@@ -1,9 +1,9 @@
 ### Testing Validations
 
 We use a library called [shoulda-matchers] to test validations.
-`shoulda-matchers` provides matchers for writing one line tests of common Rails
-functionality. Testing validations in your model is important, as it is unlikely
-validations will be tested anywhere else in your test suite.
+`shoulda-matchers` provides matchers for writing single line tests for common
+Rails functionality. Testing validations in your model is important, as it is
+unlikely validations will be tested anywhere else in your test suite.
 
 [shoulda-matchers]: https://github.com/thoughtbot/shoulda-matchers
 
@@ -29,7 +29,7 @@ The `it` these tests refer to is the test's `subject`, a method provided by
 RSpec when you pass a class as the first argument to `describe`. RSpec takes the
 subject you pass into `describe`, and instantiates a new object. In this case,
 `subject` returns `Link.new`. `is_expected` is a convenience syntax for
-`expect(subject)`.  It reads a bit nicer when you read the whole line with the
+`expect(subject)`. It reads a bit nicer when you read the whole line with the
 `it`. The following lines are roughly equivalent:
 
 ```ruby

@@ -52,6 +52,6 @@ ActiveRecord to instantiate our object. `#score` depends on `#upvotes` and
 `#downvotes`, which we can set without saving our object. Since we never have to
 save our object, we don't need FactoryGirl to set up a valid record.
 
-With a failing test, we can write out implementation:
+With a failing test, we can write our implementation:
 
 ` app/models/link.rb@d4001c148:13,15

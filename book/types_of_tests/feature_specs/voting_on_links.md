@@ -1,7 +1,7 @@
 ### Voting on links
 
 One of the most important parts of Reddit is being able to vote for posts. Let's
-implement a basic version of this funcionality in our app, where you can upvote
+implement a basic version of this functionality in our app, where you can upvote
 and downvote links.
 
 Here's a basic test for upvoting links:
