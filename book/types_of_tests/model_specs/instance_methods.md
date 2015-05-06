@@ -1,4 +1,4 @@
-### Testing Methods
+### Instance Methods
 
 In the last chapter, we added functionality for users to vote on links with some
 instance methods on our `Link` class to help with this.
@@ -15,7 +15,7 @@ upvote count is what we expect. A test for that might look like this:
 `.describe` comes from RSpec and creates a group for whatever functionality you
 are describing. It takes a subject, in our case the `Link` class, and the
 behavior as a string. Typically, we'll use the name of our method, in this case
-`#upvote`.
+`#upvote`. We prefix instance methods with a `#` and class methods with a `.`.
 
 ```
 link = build(:link, upvotes: 1)

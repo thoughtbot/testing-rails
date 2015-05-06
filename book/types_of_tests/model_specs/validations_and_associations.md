@@ -1,4 +1,4 @@
-### Testing Validations
+### Validations
 
 We use a library called [shoulda-matchers] to test validations.
 `shoulda-matchers` provides matchers for writing single line tests for common
@@ -40,7 +40,7 @@ RSpec.describe Link, "validations" do
 end
 ```
 
-### Testing Associations
+### Associations
 
 While `shoulda-matchers` provides methods for testing associations, we've found
 that adding additional tests for associations is rarely worth it, as
