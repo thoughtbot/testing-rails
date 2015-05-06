@@ -4,5 +4,7 @@ Rails.application.routes.draw do
     resource :downvote, only: [:create]
   end
 
+  get "/new", to: "new_links#index", as: "new_links"
+
   root to: "links#index"
 end

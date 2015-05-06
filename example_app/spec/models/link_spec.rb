@@ -15,6 +15,16 @@ RSpec.describe Link, ".hottest_first" do
   end
 end
 
+RSpec.describe Link, ".newest_first" do
+  it "returns the links: newest to oldest" do
+    oldest_link = create(:link, created_at: 1.year.ago)
+    middle_link = create(:link, created_at: 1.week.ago)
+    newest_link = create(:link, created_at: 1.day.ago)
+
+    expect(Link.newest_first).to eq [newest_link, middle_link, oldest_link]
+  end
+end
+
 RSpec.describe Link, "#upvote" do
   it "increments upvotes" do
     link = build(:link, upvotes: 1)

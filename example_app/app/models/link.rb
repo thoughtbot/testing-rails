@@ -6,6 +6,10 @@ class Link < ActiveRecord::Base
     order("upvotes - downvotes DESC")
   end
 
+  def self.newest_first
+    order(created_at: :desc)
+  end
+
   def upvote
     increment!(:upvotes)
   end
