@@ -111,7 +111,7 @@ You don't have to know what your code looks like at this point, you just have to
 know what it will do. Run the test. You should see it fail. Most test runners
 will output red for failure and green for success. While we say "failure" do not
 take this negatively. It's a good sign! By seeing the test fail first, we know
-that once we make it pass, our code works!
+that once we make it pass, our code works.
 
 #### Green
 
@@ -122,9 +122,8 @@ until the test passes. This may involve writing intermediary features covering
 lower level functionality which require their own Red, Green, Refactor cycle.
 
 Do not focus on code quality at this point. Be shameless! We simply want to get
-our new test passing. Strictly speaking, this includes things like returning
-literal values that are expected to force yourself to write additional tests
-that cover multiple cases.
+our new test passing. This may involve returning literal values from methods,
+which will force you to write additional tests to cover all cases.
 
 #### Refactor
 
@@ -160,7 +159,7 @@ By working inwards instead of outwards, you ensure that you never write more
 code than necessary, because there is a clear end. Once the acceptance test
 is green, there is no more code to write!
 
-Working outside-in is desireable when you have a good understanding of the
+Working outside-in is desirable when you have a good understanding of the
 problem, and have a rough understanding of how the interface and code will work
 ahead of time. Because you are starting from a high level, your code will not
 work until the very end, however your first test will guide your design all the
@@ -220,7 +219,7 @@ to do next, which can almost make programming seem robotic.
 #### Improved Design
 
 That TDD itself improves design is arguable (and many have argued it). In
-reality, a knowledge of object oriented design priciples paired with TDD
+reality, a knowledge of object oriented design principles paired with TDD
 aids design. TDD helps you recognize coupling up front. Object oriented design
 principles, like dependency injection, help you write your code in ways that
 reduce this coupling, making your code easier to test. It turns out that code
@@ -229,7 +228,7 @@ perfect sense, because our tests run against our code and good code is reusable.
 
 ### A Pragmatic Approach
 
-There's a lot of dogmatism surrounding the excercise of TDD. We believe that TDD
+There's a lot of dogmatism surrounding the exercise of TDD. We believe that TDD
 is often the best choice for all the reasons above; however, you must always
 consider the tradeoffs. Sometimes, TDD doesn't make sense or simply isn't worth
 it. In the end, the most important thing is that you can feel confident that
@@ -275,7 +274,7 @@ is such an inconvenience that you stop running your tests altogether.
 Tests cover all public code paths in your application. You should not be able to
 remove publicly accessible code from your production app without seeing test
 failures. If you aren't sufficiently covered, you can't make changes and be
-confident they won't break things. This makes is difficult to maintain your
+confident they won't break things. This makes it difficult to maintain your
 codebase.
 
 ### Reliable
@@ -311,9 +310,10 @@ duplication and abstract useful constructs to keep your test code tidy.
 
 This book comes with a bundled [example application], a Reddit clone called
 Reddat. If you are unfamiliar with Reddit, it is an online community for posting
-links and text posts. People can then comment on and upvote those posts. Make
-sure that you sign into GitHub before attempting to view the example application
-and commit links, or you'll receive a 404 error.
+links and text posts. People can then comment on and upvote those posts. Ours
+will be a simplified version with no users (anyone can post) and only link
+posts. Make sure that you sign into GitHub before attempting to view the example
+application and commit links, or you'll receive a 404 error.
 
 [example application]: https://github.com/thoughtbot/testing-rails/tree/master/example_app
 
@@ -325,11 +325,12 @@ brevity. However, you can see every change made for a solution in the example
 commits.
 
 The book is broken into chapters for specific topics in testing, which makes it
-easier to use as a referrence and learn about each part step by step. However,
+easier to use as a reference and learn about each part step by step. However,
 it does make it more challenging to see how a single feature is developed that
 requires multiple types of tests. To get a sense of how features develop
 naturally please check out the app's [commit history] to see the code evolve one
-feature at a time.
+feature at a time. Additionally, you'll find more tests to learn from that we
+won't cover in the book.
 
 [commit history]: https://github.com/thoughtbot/testing-rails/commits/master/example_app
 
@@ -386,7 +387,7 @@ Bundle install:
 bundle install
 ```
 
-Generate rspec files:
+Generate RSpec files:
 
 ```
 rails generate rspec:install
@@ -411,11 +412,14 @@ This creates the following files:
     configurations that need to be loaded for a subset of your test suite,
     consider making a separate helper file and load it only in those files.
 
-    At the bottom of this file is a comment block the RSpec maintainers suggest we
-    enable for a good experience. We agree with all of the customizations, so I've
-    [commented them in].
+    At the bottom of this file is a comment block the RSpec maintainers suggest
+    we enable for a better experience. We agree with most of the customizations.
+    I've [uncommented them], then [commented out a few specific settings] to
+    reduce some noise in test output.
 
-[commented them in]: https://github.com/thoughtbot/testing-rails/commit/572ddcebcf86c74687ced40ddb0aad234f6e9657
+[uncommented them]: https://github.com/thoughtbot/testing-rails/commit/572ddcebcf86c74687ced40ddb0aad234f6e9657
+[commented out a few specific settings]: https://github.com/thoughtbot/testing-rails/commit/1c5e29def9e64d4e67abb5a0867c67348468ab5b
+
 
 * [`spec/rails_helper.rb`](https://github.com/thoughtbot/testing-rails/blob/b86752a0690a2800c6f57e23974bfe11c8b5fe28/example_app/spec/rails_helper.rb)
 
@@ -426,3 +430,1040 @@ The generated spec helpers come with plenty of comments describing what each
 configuration does. I encourage you to read those comments to get an idea of how
 you can customize RSpec to suit your needs. I won't cover them as they tend to
 change with each RSpec version.
+
+# Types of Tests
+
+## Feature Specs
+
+Feature specs simulate a user opening your app in a browser and interacting with
+the page. Since they test that the application works for the end user, they are
+considered a form of **acceptance tests**, and you may hear them referred to as
+such. When developing a new feature and practicing outside-in development, this
+is where we'll typically start.
+
+### Submitting a link post
+
+For our first feature, we're going to allow users to create a link post. To do
+this they'll have to click on a link from the home page, fill in the title and
+URL of the link, and click "Submit". We'll test that once they do all that, they
+see the title they entered on the page, and it should link to the URL they
+provided.
+
+As we're using TDD, we'll start with a test describing the functionality we'd
+like to see. Let's start with some pseudocode:
+
+```
+As a user
+When I visit the home page
+And I click "Submit a link post"
+And I fill in my title and URL
+And I click "Submit"
+Then I should see the title on the page
+And it should link to the given URL
+```
+
+One thing to note is that we start our description with _who_ the end user is
+for this test. Our app will only have a single role, so it's safe to use `user`,
+however many applications will need to differentiate unauthenticated users
+(often visitors), admins, or domain specific users roles (like a _coach_ or
+_player_).
+
+#### Capybara
+
+In order for our tests to be able to interact with the browser, we have to
+install a gem called [Capybara]. Capybara is an API for interacting with the
+browser. It provides methods to visit pages, fill in forms, click buttons, and
+more.
+
+[Capybara]: https://github.com/jnicklas/capybara
+
+Add it to your Gemfile and `bundle install`:
+
+```ruby
+gem "capybara"
+```
+
+Require it from your `rails_helper`:
+
+```ruby
+require "capybara/rails"
+```
+
+#### The test
+
+With that installed, we're ready to write our spec. Take a look at the completed
+version. We'll go through it line by line:
+
+```ruby
+# spec/features/user_submits_a_link_spec.rb
+require "rails_helper"
+
+RSpec.feature "User submits a link" do
+  scenario "they see the page for the submitted link" do
+    link_title = "This Testing Rails book is awesome!"
+    link_url = "http://testingrailsbook.com"
+
+    visit root_path
+    click_on "Submit a new link"
+    fill_in "link_title", with: link_title
+    fill_in "link_url", with: link_url
+    click_on "Submit!"
+
+    expect(page).to have_link link_title, href: link_url
+  end
+end
+```
+
+Create a new file at `spec/features/user_submits_a_link_spec.rb`.
+
+We'll first require our `rails_helper.rb`, as this will include our Rails
+environment and Capybara:
+
+```ruby
+require "rails_helper"
+```
+
+Next, our feature block:
+
+```ruby
+RSpec.feature "User submits a link" do
+  ...
+end
+```
+
+`.feature` is a method that's provided by Capybara. By using it, you have access
+to all of Capybara's methods for interacting with the page. You may see
+examples elsewhere calling `.feature` in the global context. This is
+because old versions of RSpec used monkeypatching to define top level methods on
+`main` and `Module`. We disabled this functionality by [commenting in]
+`config.disable_monkey_patching!`, as this will be the default functionality in
+future versions of RSpec.
+
+[commenting in]: https://github.com/thoughtbot/testing-rails/blob/e03ef3ca8150d8d28c4cdf760f53d11070447b67/example_app/spec/spec_helper.rb#L53
+
+`.feature` takes a string, which you use to describe your feature. We'll usually
+name this the same thing as we named our file and create a new file for every
+feature. It gets printed out when we run our specs in `documentation` format.
+
+Inside our feature block, we have a `#scenario` block:
+
+```ruby
+scenario "and sees the shortened URL" do
+  ...
+end
+```
+
+This is the container for a single specification. It describes one potential
+outcome of the user creating a link. Like the feature block, we pass it a string
+which we'll see in our output when we run our spec. The name for the scenario
+should be a continuation of the string used for the feature block. When read
+together, they should construct a sentence-like structure so that they read well
+when we run our specs.
+
+Now for the spec itself!
+
+We first define a couple variables for our title and URL:
+
+```ruby
+link_title = "This Testing Rails book is awesome!"
+link_url = "http://testingrailsbook.com"
+```
+
+Next, visit the homepage:
+
+```ruby
+visit root_path
+```
+
+Pretty straightforward. `visit` is a method provided by Capybara which will
+visit `root_path` as defined by your application. Astute readers will realize
+that we have not yet defined `root_path`. `root_path` is undefined, because
+this is a brand new application. We're making this up, as we expect there to be
+some root route of the application, and we know enough about Rails to know that
+Rails convention will name it `root_path` once it is defined.
+
+Use Capybara to click a link. This link will bring us to a new page to fill in
+our form:
+
+```ruby
+click_on "Submit a new link"
+```
+
+Fill in the form fields:
+
+```ruby
+fill_in "link_title", with: link_title
+fill_in "link_url", with: link_url
+```
+
+If you guessed that `#fill_in` was from Capybara, you'd be right! `#fill_in`
+finds a method by its name, id, or label and fills it in with the given text. In
+this case, we're using the ids `link_title` and `link_url`. While we are using
+ids, note that Capybara does not expect you to add a `#` to the beginning of
+your id as you would with CSS.
+
+The fields we are looking for don't exist yet, but they will soon. We're using
+Rails convention over configuration here to guess what the fields are going to
+be called. We know that Rails gives ids to all fields by joining the model name
+and the field name. As long as we don't customize those, we can use them to our
+advantage.
+
+Even if you didn't know that, once we get around to running the test, you'd see
+it fail because it couldn't find a field with that name, id, or label. At that
+point, you could open the page in your browser, inspect the element to see what
+the id is for real, and replace it here.
+
+With the fields filled in, we can submit the form!
+
+```ruby
+click_on "Shorten!"
+```
+
+And, finally, the assertion:
+
+```ruby
+expect(page).to have_link link_title, href: link_url
+```
+
+There's a lot going on here, including some "magic", so let's go through each of
+the components. While this syntax may look strange, remember that RSpec is just
+Ruby code. This could be rewritten as such:
+
+```ruby
+expect(page).to(have_link(link_title, { href: link_url }))
+```
+
+`#expect` is an RSpec method that will build an assertion. It takes one value,
+which we will run an assertion against. In this case it's taking the `page`
+object, which is a value provided by Capybara that gives access to the currently
+loaded page. To run the assertion, you call `#to` on the return value of
+`#expect` and pass it a **matcher**. The matcher is a method that returns truthy
+or falsy when run through our assertion. The matcher we've passed here is
+`#have_link`. `#have_link` comes from Capybara, and returns true if it finds a link
+with the given text on the page. In this case we also pass it a `href` option so
+it checks against the link's URL.
+
+So now for the magic. `#have_link` doesn't actually exist. RSpec defines
+matchers automatically for methods that start with `has_` and end with `?`.
+Capybara defines the method `#has_link?` on the `page` object, so we could think
+of this whole line as raising an error if `page.has_link?(...)` returns false.
+RSpec will automatically look for the method `#has_link?` when it sees
+`#have_link`.
+
+If you've found all this a bit complex, don't worry. How it works is less
+important than being able to write assertions using the syntax. We'll be writing
+a lot of tests, so the syntax will soon become familiar.
+
+Take a look at the [rspec-expectations] gem to see all of the build in matchers.
+
+[rspec-expectations]: https://github.com/rspec/rspec-expectations
+
+#### Running our spec
+
+Now that our spec is written, we have to run it! To run it, find your command
+line and enter `rspec`. `rspec` will look in our `spec` directory and run all of
+the files that end in `_spec.rb`. For now, that's a single file and a single
+test.
+
+You should see something like this:
+
+```
+User submits a link
+  they see the page for the submitted link (FAILED - 1)
+
+Failures:
+
+  1) User submits a link they see the page for the submitted link
+     Failure/Error: visit root_path
+     NameError:
+       undefined local variable or method `root_path' for
+         #<RSpec::ExampleGroups::UserSubmitsALink:0x007f9a2231fe98>
+       ./spec/features/user_submits_a_link_spec.rb:8:in
+         `block (2 levels) in <top (required)>'
+
+Finished in 0.00183 seconds (files took 2.53 seconds to load)
+1 example, 1 failure
+
+Failed examples:
+
+rspec ./spec/features/user_submits_a_link_spec.rb:4 # User submits a link they
+  see the page for the submitted link
+
+Randomized with seed 5573
+```
+
+Let's go through this bit by bit:
+
+```
+User submits a link
+  they see the page for the submitted link (FAILED - 1)
+```
+
+This is the summary of all the tests we ran. It uses the names provided in our
+`.feature` and `#scenario` block descriptions. Note that here we read these names
+together, which is why we wrote them to read nicely together. We see that the
+scenario `they see the page for the submitted link` failed.
+
+The format we see here is called `documentation` and is due to our
+configuration in our `spec_helper.rb`. When we run a single spec file, it gives
+the output it an expressive format. When we run multiple spec files, this format
+can become cumbersome with all the output, so it uses a more concise `dot`
+syntax. We'll see that soon.
+
+```
+Failures:
+
+  1) User submits a link they see the page for the submitted link
+     Failure/Error: visit root_path
+     NameError:
+       undefined local variable or method `root_path' for
+         #<RSpec::ExampleGroups::UserSubmitsALink:0x007f9a2231fe98>
+       ./spec/features/user_submits_a_link_spec.rb:8:in
+         `block (2 levels) in <top (required)>'
+```
+
+This section outlines all of the failures. You will see one failure for each
+spec that failed. It outputs the error message, the line that failed, and the
+backtrace. We'll look at this in more detail in a second.
+
+```
+Finished in 0.00183 seconds (files took 2.53 seconds to load)
+1 example, 1 failure
+```
+
+Next is a summary of the tests that were run, giving you the total time to run
+and the number of tests that were run and that failed.
+
+```
+Failed examples:
+
+rspec ./spec/features/user_submits_a_link_spec.rb:4 # User submits a link they
+see the page for the submitted link
+```
+
+This section outputs the command to run each of the failing specs, for easy copy
+and pasting. If you initially run your entire suite with `rspec` and want to
+focus in on a single failing test, you can copy this line and enter it into your
+terminal to run just that spec. `rspec` takes one or multiple files and will
+even parse line numbers as you see above by passing the filename with the line
+number at the end (`rspec ./path/to/file:5` if you wanted to run the spec on
+line `5`).
+
+```
+Randomized with seed 5573
+```
+
+Finally, we see the seed we ran our specs with. We run our specs in a random
+order to help diagnose specs that may not clean up after themselves properly.
+We'll discuss this in more detail in our section on intermittent failures.
+
+#### Passing our test
+
+Now that we know how to read the RSpec output, let's pass our test. To do this,
+we'll read the error messages one at a time and write only enough code to make
+the current error message pass.
+
+The first error we saw looked like this:
+
+```
+Failure/Error: visit root_path
+NameError:
+  undefined local variable or method `root_path' for
+    #<RSpec::ExampleGroups::UserSubmitsALink:0x007f9a2231fe98>
+  ./spec/features/user_submits_a_link_spec.rb:8:in
+    `block (2 levels) in <top (required)>'
+```
+
+It looks like `root_path` is undefined. This helper method comes from Rails when
+you define the route in `config/routes.rb`. We want our homepage to show all of
+the links that have been submitted, so it will point to the `index` action of
+our `LinksController`:
+
+```ruby
+root to: "links#index"
+```
+
+This is the smallest amount of code we can write to fix that error message.
+Run the test again:
+
+```
+Failure/Error: visit root_path
+ActionController::RoutingError:
+  uninitialized constant LinksController
+```
+
+Okay, we need to define our `LinksController`. In
+`app/controllers/links_controller.rb`:
+
+```ruby
+class LinksController
+end
+```
+
+Define the controller class. We get this failure:
+
+```
+Failure/Error: visit root_path
+NoMethodError:
+  undefined method `action' for LinksController:Class
+```
+
+Hmm, so this one's a bit more cryptic. It's saying that `action` is undefined
+for our new `LinksController` class. This one requires a bit of Rails knowledge
+to debug. If you are familiar with Rails, you know that `action` is the word we
+use to refer to a routable method, specific to controllers. So, what makes a
+controller different from other classes? Well, it needs to inherit from
+`ApplicationController`.
+
+```ruby
+class LinksController < ApplicationController
+```
+
+Run the test again:
+
+```
+Failure/Error: visit root_path
+AbstractController::ActionNotFound:
+  The action 'index' could not be found for LinksController
+```
+
+Okay, let's define that method in our controller (remember that `action` is
+Rails lingo for a method in a controller that can be routed to):
+
+```ruby
+def index
+end
+```
+
+```
+Failure/Error: visit root_path
+ActionView::MissingTemplate:
+  Missing template links/index, application/index with {:locale=>[:en],
+    :formats=>[:html], :variants=>[], :handlers=>[:erb, :builder, :raw, :ruby,
+    :coffee]}. Searched in:
+      * "/Users/jsteiner/code/thoughtbot/testing-behind/app/views"
+```
+
+We're missing our template! It tells us all the places it looked and the formats
+it looked for. In this case it's looking for an HTML template at `links/index`.
+
+We can create an empty file there for now:
+
+```
+mkdir app/views/links
+touch app/views/links/index.html.erb
+```
+
+Rerun the test:
+
+```
+Failure/Error: click_on "Submit a new link"
+Capybara::ElementNotFound:
+  Unable to find link or button "Submit a new link"
+```
+
+`app/views/links/index.html.erb` needs a link that reads "Submit a new link". We
+know it's going to go to our new link page:
+
+```
+<%= link_to "Submit a new link", new_link_path %>
+```
+
+The new failure:
+
+```
+Failure/Error: visit root_path
+ActionView::Template::Error:
+  undefined local variable or method `new_link_path' for
+    #<#<Class:0x007ff23228ee58>:0x007ff232226088>
+```
+
+Now we're missing a route for new new link page. Define it in
+`config/routes.rb`:
+
+```ruby
+resources :links, only: [:new]
+```
+
+Note here that we limit which routes are created with `only`. This will prevent
+us from having routes that we don't yet support.
+
+Rerunning the test we get a familiar error.
+
+```
+Failure/Error: click_on "Submit a new link"
+AbstractController::ActionNotFound:
+  The action 'new' could not be found for LinksController
+```
+
+At this point, I hope you understand the process we use to develop our features.
+You may now understand why having fast tests is important, as you can see we run
+them a lot!
+
+Now, do we really run them after every single small code change? Sometimes. Not
+always. As you become more experienced with TDD, you'll find that you can predict
+the output your tests will give as you develop a feature. Once you can do that,
+you can skip some test runs while still only writing code to pass the test that
+would have appeared. This allows you to practice TDD while saving some time.
+However, it is imperative that you only write code in response to the test that
+would have failed. If you can't accurately predict what failure message you'll
+see, you should run the tests.
+
+I'll leave the implementation of the rest of this feature as an exercise for the
+reader. Take a peak at [my commit] if you get stuck.
+
+[my commit]: https://github.com/thoughtbot/testing-rails/commit/c20b7009e46454070e87156a9947be39f08040f9
+
+### Submitting an invalid link
+
+All links should have a title and URL, so we should prevent users from
+submitting invalid links. Since this is part of the "User submits a link"
+feature, we can add it to the same feature block under a different scenario. A
+basic feature spec might look like this:
+
+```ruby
+# spec/features/user_submits_a_link_spec.rb
+context "the form is invalid" do
+  scenario "they see a useful error message" do
+    link_title = "This Testing Rails book is awesome!"
+
+    visit root_path
+    click_on "Submit a new link"
+    fill_in "link_title", with: link_title
+    click_on "Submit!"
+
+    expect(page).to have_content "Url can't be blank"
+  end
+end
+```
+
+This test intentionally leaves the URL blank, and expects to see an error
+message on the page for the missing URL. While we could test every possible path
+(without a title, without a URL, without both), we really only need to test one
+at an integration level. This will assure us that an error message renders if the
+link is invalid. To ensure that each of our fields are valid, we instead test
+this at the model layer. You can see how I tested this in the [respective
+commit], but we won't cover model specs until the next chapter.
+
+[respective commit]: https://github.com/thoughtbot/testing-rails/commit/5ed3981619066bb71c1b8f4b17647c57aebd2707
+
+There are a couple new methods in this test. The first is `#context`. As you
+might guess, it allows you to provide additional context to wrap one or more
+scenarios. In fact, you can even nest additional context blocks, however we
+recommend against that. Specs are much easier to read with minimal nesting. If
+you need to nest scenarios more than a couple levels deep, you might consider
+pulling out a new feature file.
+
+The other new method is `#have_content`. Like `#have_link`, this method comes
+from Capybara, and is actually `#has_content?`. `#has_content?` will look on the
+page for the given text, ignoring any HTML tags.
+
+#### Passing the test
+
+As always, I'll run the test now and follow the error messages to a solution.
+I'll leave this up to the reader, but feel free to check out [the commit] to see
+what I did.
+
+[the commit]: https://github.com/thoughtbot/testing-rails/commit/5ed3981619066bb71c1b8f4b17647c57aebd2707
+
+#### Four Phase Test
+
+You'll note that in each of our tests so far, we've used some strategic spacing.
+This spacing is meant to make the tests easier to read by sectioning it into
+multiple phases. The pattern here is modeled after the [Four Phase Test], which
+takes the form:
+
+[Four Phase Test]: http://xunitpatterns.com/Four%20Phase%20Test.html
+
+```
+test do
+  setup
+  exercise
+  verify
+  teardown
+end
+```
+
+**Setup**
+
+During setup, we create any objects that your test depends on.
+
+**Exercise**
+
+During exercise, we execute the functionality we are testing.
+
+**Verify**
+
+During verify, we check our expectations against the result of the exercise
+phase.
+
+**Teardown**
+
+During teardown, we clean-up after ourselves. This may involve reseting the
+database to it's pre-test state or resetting any modified global state. This is
+usually handled by our test framework.
+
+Four phase testing is more prominently used with model and unit tests, however
+it is still useful for our acceptance tests. This is especially true for simple
+tests like the two we've demonstrated, however some acceptance tests may be
+large enough to warrant even more grouping. It's best to use your discretion and
+group things into logical sections to make code easier to read.
+
+### Viewing the homepage
+
+Now that we can create links, we should test that we actually see them on the
+homepage. Again, we'll start with some pseudocode:
+
+```
+As a user
+Given a link has already been submitted
+When I visit the home page
+Then I should see the link's title on the page
+And it should link to the correct URL
+```
+
+This test is a little different than our last. This time we have a "given".
+Instead of creating a link ourselves, we're going to assume one already exists.
+The reason behind this is simple. Walking through our application with Capybara
+is slow. We shouldn't do it any more than we have to. We've already tested that
+we can submit a link, so we don't need to test it again. Instead, we can create
+records directly in the database.
+
+We could go about creating records the way you'd expect:
+
+```ruby
+link = Link.create(title: "Testing Rails", url: "http://testingrailsbook.com")
+```
+
+This _would_ work, but it has some serious downfalls when using it to test
+software. Imagine we have a large application, with hundreds of tests, each one
+having created a `Link` the manual way. If we were to add a required field to
+links, we would have to go through all of our tests and add the required field
+for _all_ of these tests to get them to pass again. There are two widely used
+fixes for this painpoint. The first one is called fixtures.
+
+#### Fixtures
+
+Fixtures allow you to define sample data in YAML files that you can
+load and reuse through your tests. It might look something like this:
+
+
+```yaml
+# fixtures/links.yml
+testing_rails:
+  title: Testing Rails
+  url: http://testingrailsbook.com
+```
+
+```ruby
+# In your test
+link = links(:testing_rails)
+```
+
+Now that we've extracted the definition of our _Testing Rails_ link, if our
+model adds new required fields we only have to update our fixtures file. This is
+a big step up, but we still see some problems with this solution.
+
+For one, fixtures are a form of **Mystery Guest**. You have a Mystery Guest when
+data used by your test is defined outside the test, thus obscuring the cause and
+effect between that data and what is being verified. This makes tests harder to
+reason about, because you have to hunt down another file to be able to
+understand the entirety of what is happening.
+
+As applications grow, you'll typically need variations on each of your models
+for different situations. For example, you may have a fixture for every user
+role in your application, then even more users for different roles depending on
+whether or not the user is a member of a specific organization. All these
+possible states a user can be in grow the number of fixtures you will have to
+recall.
+
+#### FactoryGirl
+
+We've found factories to be a better alternative to fixtures. Rather than
+defining hardcoded data, factories define generators of sorts, with predefined
+logic where necessary. You can override this logic directly when instantiating
+the factories in your tests. They look something like this:
+
+```ruby
+# spec/factories.rb
+FactoryGirl.define do
+  factory :link do
+    title "Testing Rails"
+    url "http://testingrailsbook.com"
+  end
+end
+```
+
+```ruby
+# In your test
+link = create(:link)
+
+# Or override the title
+link = create(:link, title: "TDD isn't Dead!")
+```
+
+Factories put the important logic right in your test. They make it easy to see
+what is happening at a glance and are more flexible to different scenarios you
+may want to set up. While factories can be slower than fixtures, we think the
+benefits in flexibility and readability outweigh the costs.
+
+#### Installing FactoryGirl
+
+To install FactoryGirl, add `factory_girl_rails` to your `Gemfile`:
+
+```ruby
+group :development, :test do
+  ...
+  gem "factory_girl_rails"
+  ...
+end
+```
+
+We'll also be using Database Cleaner:
+
+```ruby
+group :test do
+  ...
+  gem "database_cleaner"
+  ...
+end
+```
+
+Install the new gems and create a new file `spec/support/factory_girl.rb`:
+
+```ruby
+# spec/support/factory_girl.rb
+RSpec.configure do |config|
+  config.include FactoryGirl::Syntax::Methods
+
+  config.before(:suite) do
+    begin
+      DatabaseCleaner.start
+      FactoryGirl.lint
+    ensure
+      DatabaseCleaner.clean
+    end
+  end
+end
+```
+
+This file will lint your factories before the test suite is run. That is, it
+will ensure that all the factories you define are valid. While not necessary,
+this is a worthwhile check, especially while you are learning. It's a quick way
+to rest easy that your factories work. Since `FactoryGirl.lint` may end up
+persisting some records to the database, we use Database Cleaner to restore the
+state of the database after we've linted our factories. We'll cover Database
+Cleaner in depth later.
+
+Now, this file won't require itself! In your `rails_helper` you'll find some
+commented out code that requires all of the files in `spec/support`. Let's
+comment that in so our FactoryGirl config gets loaded:
+
+```ruby
+# Uncomment me!
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+```
+
+Last, we need to create our factories file. Create a new file at
+`spec/factories.rb`:
+
+```ruby
+FactoryGirl.define do
+end
+```
+
+This is where we'll define our factory in the next section.
+
+#### The test
+
+With FactoryGirl set up, we can write our test. We start with a new file at
+`spec/features/user_views_homepage_spec.rb`.
+
+```ruby
+require "rails_helper"
+
+RSpec.feature "User views homepage" do
+  scenario "they see existing links" do
+  end
+end
+```
+
+We require our `rails_helper` and create the standard feature and scenario
+blocks.
+
+```ruby
+link = create(:link)
+```
+
+To setup our test, we create a link using FactoryGirl's `.create` method, which
+instantiates a new `Link` object with our (currently non-existant) factory
+definition and persists it to the database.
+
+`.create` is loaded into the global context in `spec/support/factory_girl.rb`:
+
+```
+config.include FactoryGirl::Syntax::Methods
+```
+
+While we'll be calling `.create` in the global context to keep our code cleaner
+, you may see people calling it more explicitly: `FactoryGirl.create`. This is
+simply a matter of preference, and both are acceptable.
+
+Now, we'll need to add a factory definition for our `Link` class in
+`spec/factories.rb`:
+
+```ruby
+# spec/factories.rb
+factory :link do
+  title "Testing Rails"
+  url "http://testingrailsbook.com"
+end
+```
+
+We define a default title and URL to be created for all links created with
+FactoryGirl. We only define defaults for fields that we [validate presence of]. If
+you add more than that, your factories can become unmanageable as all of your
+tests become coupled to data defined in your factories that isn't a default.
+Not following this advice is a common mistake in Rails codebases and leads to
+major headaches.
+
+[validate presence of]: https://github.com/thoughtbot/testing-rails/commit/5ed3981619066bb71c1b8f4b17647c57aebd2707#diff-594e2b1fb48290a8f5f695da1c1e9318R2
+
+The specific title and URL is unimportant, so we don't override the factories'
+defaults. This allows us to focus on what is important and makes the test easier
+to read.
+
+```ruby
+visit root_path
+
+expect(page).to have_link link.title, href: link.url
+```
+
+Nothing novel here. Visit the homepage and assert that we see the title linking
+to the URL.
+
+#### Passing the test
+
+This is left as an exercise for the reader. Feel free to check out the
+[associated commit] to see what I did.
+
+[associated commit]: https://github.com/thoughtbot/testing-rails/commit/944b0967232fe7bb623adbb36482ce3f76c7a037
+
+### Voting on links
+
+One of the most important parts of Reddit is being able to vote for posts. Let's
+implement a basic version of this functionality in our app, where you can upvote
+and downvote links.
+
+Here's a basic test for upvoting links:
+
+```ruby
+# spec/features/user_upvotes_a_link_spec.rb
+RSpec.feature "User upvotes a link" do
+  scenario "they see an increased score" do
+    link = create(:link)
+
+    visit root_path
+
+    within "#link_#{link.id}" do
+      click_on "Upvote"
+    end
+
+    expect(page).to have_css "#link_#{link.id} [data-role=score]", text: "1"
+  end
+end
+```
+
+There are a couple new things in this test. First is the `within` block.
+`within` takes a selector and looks for a matching element on the page. It then
+limits the scope of everything within the block to elements inside the specified
+element. In this case, our page has a potential to have multiple links or other
+instances of the word "Upvote". We scope our finder to only look for that text
+within the list element for our link. We use the CSS id `#link_#{link.id}` which
+is given by `content_tag_for`.
+
+The second new method is `has_css`, which asserts that a given selector is on
+the page. With the `text` option, it ensures that the provided text is found
+within the given selector. The selector I use includes a data attribute:
+`[data-role=score]`. We'll frequently use `data-role`s to decouple our test
+logic from our presentation logic. This way, we can change class names and tags
+without breaking our tests!
+
+## Model Specs
+
+As you can probably guess, model specs are specs for testing your Rails models.
+If you've written unit tests before, they may seem similar, although many model
+specs will interact with the database due to the model's dependency on
+ActiveRecord, so they are not truly unit tests.
+
+### Instance Methods
+
+In the last chapter, we added functionality for users to vote on links with some
+instance methods on our `Link` class to help with this.
+
+#### Link#upvote
+
+The first method is `#upvote`, which increments the `upvotes` count on the
+link by 1. A simple way to test this behavior is to instantiate an object with a
+known upvote count, call our `#upvote` method, and then verify that the new
+upvote count is what we expect. A test for that might look like this:
+
+```ruby
+# spec/models/link_spec.rb
+RSpec.describe Link, "#upvote" do
+  it "increments upvotes" do
+    link = build(:link, upvotes: 1)
+
+    link.upvote
+
+    expect(link.upvotes).to eq 2
+  end
+end
+```
+
+`.describe` comes from RSpec and creates a group for whatever functionality you
+are describing. It takes a subject, in our case the `Link` class, and the
+behavior as a string. Typically, we'll use the name of our method, in this case
+`#upvote`. We prefix instance methods with a `#` and class methods with a `.`.
+
+```
+link = build(:link, upvotes: 1)
+```
+
+`.build` is another FactoryGirl method. It's similar to `.create`, in that it
+instantiates an object based on our factory definition, however `.build` does
+not save the object. Whenever possible, we're going to favor `.build` over
+`.create`, as persisting to the database is one of the slowest operations in our
+tests. In this case, we don't care that the record was saved before we increment
+it so we use `.build`.
+
+Our _verify_ step is slightly different than we've seen in our feature specs.
+This time, we aren't asserting against the `page` (we don't even have access to
+the page, since this isn't a Capybara test). Instead, we're asserting against
+our system under test: the link. We're using a built in RSpec matcher `eq` to
+confirm that the *expected* value, `2`, matches the *actual* value of
+`link.upvotes`.
+
+With the test written, we can implement the method as such:
+
+```ruby
+# app/models/link.rb
+def upvote
+  increment!(:upvotes)
+end
+```
+
+#### Link#score
+
+Our score method should return the difference of the number of upvotes and
+downvotes. To test this, we can instantiate a link with a known upvote count and
+downvote count, then compare the expected and actual scores.
+
+```ruby
+# spec/models/link_spec.rb
+RSpec.describe Link, "#score" do
+  it "returns the upvotes minus the downvotes" do
+    link = Link.new(upvotes: 2, downvotes: 1)
+
+    expect(link.score).to eq 1
+  end
+end
+```
+
+In this test, you'll notice that we forego FactoryGirl and use plain ol'
+ActiveRecord to instantiate our object. `#score` depends on `#upvotes` and
+`#downvotes`, which we can set without saving our object. Since we never have to
+save our object, we don't need FactoryGirl to set up a valid record.
+
+With a failing test, we can write our implementation:
+
+```ruby
+# app/models/link.rb
+def score
+  upvotes - downvotes
+end
+```
+
+### Class Methods
+
+Testing class methods works similarly to testing instance methods. I [added some
+code] to sort the links from highest to lowest score. To keep our business logic
+in our models, I decided to implement a `.hottest_first` method to keep that
+logic out of the controller.
+
+[added some code]: https://github.com/thoughtbot/testing-rails/commit/688743177f5ba0c5c0a4a6fdf4446cf8aedcc4a1
+
+We order our model specs as close as possible to how we order our model's
+methods. Thus, I added the spec for our new class method under the validations
+tests and above the instance method tests.
+
+```ruby
+# spec/models/link_spec.rb
+RSpec.describe Link, ".hottest_first" do
+  it "returns the links: hottest to coldest" do
+    coldest_link = create(:link, upvotes: 3, downvotes: 3)
+    hottest_link = create(:link, upvotes: 5, downvotes: 1)
+    lukewarm_link = create(:link, upvotes: 2, downvotes: 1)
+
+    expect(Link.hottest_first).to eq [hottest_link, lukewarm_link, coldest_link]
+  end
+end
+```
+
+This is a fairly common pattern, as many of our ActiveRecord model class methods
+are for sorting or filtering. The interesting thing to note here is that I
+intentionally scramble the order of the created links. I've also chosen numbers
+for the upvotes and downvotes to ensure that the test will fail if we
+incidentally are testing something other than what we intend. For example, if we
+accidentally implemented our method to sort by upvotes, the test would still
+fail.
+
+### Validations
+
+We use a library called [shoulda-matchers] to test validations.
+`shoulda-matchers` provides matchers for writing single line tests for common
+Rails functionality. Testing validations in your model is important, as it is
+unlikely validations will be tested anywhere else in your test suite.
+
+[shoulda-matchers]: https://github.com/thoughtbot/shoulda-matchers
+
+To use `shoulda-matchers`, add the gem to your Gemfile's `:test` group:
+
+```ruby
+gem "shoulda-matchers"
+```
+
+After bundle installing, you can use the built in matchers ([see more
+online][shoulda-matchers]) like so:
+
+```ruby
+RSpec.describe Link, "validations" do
+  it { is_expected.to validate_presence_of(:title) }
+  it { is_expected.to validate_presence_of(:url) }
+  it { is_expected.to validate_uniqueness_of(:url) }
+end
+```
+
+`is_expected` is an RSpec method that makes it easier to write one line tests.
+The `it` these tests refer to is the test's `subject`, a method provided by
+RSpec when you pass a class as the first argument to `describe`. RSpec takes the
+subject you pass into `describe`, and instantiates a new object. In this case,
+`subject` returns `Link.new`. `is_expected` is a convenience syntax for
+`expect(subject)`. It reads a bit nicer when you read the whole line with the
+`it`. The following lines are roughly equivalent:
+
+```ruby
+RSpec.describe Link, "validations" do
+  it { expect(Link.new).to validate_presence_of(:title) }
+  it { expect(subject).to validate_presence_of(:url) }
+  it { is_expected.to validate_uniqueness_of(:url) }
+end
+```
+
+### Associations
+
+While `shoulda-matchers` provides methods for testing associations, we've found
+that adding additional tests for associations is rarely worth it, as
+associations will be tested at an integration level. Since we haven't found them
+useful for catching regressions or for helping us drive our code, we have
+stopped using them.
