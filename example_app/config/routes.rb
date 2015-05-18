@@ -4,6 +4,12 @@ Rails.application.routes.draw do
     resource :downvote, only: [:create]
   end
 
+  namespace :api do
+    namespace :v1 do
+      resources :links, only: [:index]
+    end
+  end
+
   get "/new", to: "new_links#index", as: "new_links"
 
   root to: "links#index"
