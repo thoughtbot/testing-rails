@@ -24,3 +24,5 @@
 <<[types_of_tests/model_specs.md]
 
 <<[types_of_tests/request_specs.md]
+
+<<[types_of_tests/view_specs.md]
