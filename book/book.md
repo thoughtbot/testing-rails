@@ -22,3 +22,5 @@
 <<[types_of_tests/feature_specs.md]
 
 <<[types_of_tests/model_specs.md]
+
+<<[types_of_tests/request_specs.md]
