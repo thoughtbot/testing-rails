@@ -52,3 +52,19 @@ RSpec.describe Link, "#score" do
     expect(link.score).to eq 1
   end
 end
+
+RSpec.describe Link, "#image?" do
+  %w(.jpg .gif .png).each do |extension|
+    it "returns true if the URL ends in #{extension}" do
+      link = Link.new(url: "http://example.com/a#{extension}")
+
+      expect(link.image?).to be_truthy
+    end
+  end
+
+  it "returns false if the URL does not have an image extension" do
+    link = Link.new(url: "http://not-an-image")
+
+    expect(link.image?).to be_falsey
+  end
+end
