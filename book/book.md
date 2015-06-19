@@ -36,3 +36,7 @@
 # Intermediate Testing
 
 <<[intermediate_testing/testing_in_isolation.md]
+
+# Antipatterns
+
+<<[antipatterns/testing_implementation_details.md]
