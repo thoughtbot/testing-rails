@@ -344,7 +344,7 @@ Define the controller class. We get this failure:
 ```
 Failure/Error: visit root_path
 NoMethodError:
-  undefined method `action' for LinksController:Class
+  undefined method `index' for LinksController:Class
 ```
 
 Hmm, so this one's a bit more cryptic. It's saying that `action` is undefined
