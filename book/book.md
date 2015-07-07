@@ -28,3 +28,5 @@
 <<[types_of_tests/request_specs.md]
 
 <<[types_of_tests/view_specs.md]
+
+<<[types_of_tests/controller_specs.md]
