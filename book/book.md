@@ -19,6 +19,8 @@
 
 # Types of Tests
 
+<<[types_of_tests/testing_pyramid.md]
+
 <<[types_of_tests/feature_specs.md]
 
 <<[types_of_tests/model_specs.md]
