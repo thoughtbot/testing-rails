@@ -30,3 +30,5 @@
 <<[types_of_tests/view_specs.md]
 
 <<[types_of_tests/controller_specs.md]
+
+<<[types_of_tests/helper_specs.md]
