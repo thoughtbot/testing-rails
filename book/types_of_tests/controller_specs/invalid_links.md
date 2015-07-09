@@ -26,7 +26,7 @@ of the template that will be rendered.
 
 It is worth noting here that this spec is *not* equivalent to the feature spec
 it replaces. The feature test tested that an error message *actually appeared on
-the page*. The controller test on the other hand only tests that the form gets
+the page*. The controller test, on the other hand, only tests that the form gets
 re-rendered.
 
 This is one of those situations where you have to make a judgment call. Is it

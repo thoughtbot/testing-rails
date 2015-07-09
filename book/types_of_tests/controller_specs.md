@@ -29,10 +29,10 @@ and go through the routing system.
 
 So if you have logic in a controller and
 
-* the forking logic is part of two distinct flows you may want a **feature
-  spec**
-* you care about the URL you may want a **request spec**
-* you care about the rendered content you may want a **request spec** or even a
+* the forking logic is part of two distinct and important features, you may want
+  a **feature spec**
+* you care about the URL, you may want a **request spec**
+* you care about the rendered content, you may want a **request spec** or even a
   **view spec**
 * none of the above apply, you may want a **controller spec** or a **request
   spec**
@@ -44,7 +44,7 @@ They "happy path" is where everything succeeds (e.g. successfully navigating the
 app and submitting a link) while the "sad path" is where a failure occurs (e.g.
 successfully navigating the app but submitting an invalid link). Some flows
 through the app have multiple points of potential failure so there can be
-multiple "sad paths" for a given "happy path"
+multiple "sad paths" for a given "happy path".
 
 All this being said, let's look at an actual controller spec! In this section,
 we'll be rewriting the tests for the invalid link case to use a controller spec
