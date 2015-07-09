@@ -433,6 +433,44 @@ change with each RSpec version.
 
 # Types of Tests
 
+## The Testing Pyramid
+
+The various test types we are about to look at fall along a spectrum. At one end
+are **unit tests**. These test individual components in isolation, proving that
+they implement the expected behavior independent of the surrounding system.
+Because of this, unit tests are usually small and fast.
+
+In the real world, these components don't exist in a vacuum: they have to
+interact with each other. One component may expect a collaborator to have a
+particular interface when in fact it has completely different one. Even though
+all the tests pass, the software as a whole is broken.
+
+This is where **integration tests** come in. These tests exercise the system as
+a whole rather than its individual components. They typically do so by
+simulating a user trying to accomplish a task in our software. Instead of being
+concerned with invoking methods or calling out to collaborators, integration
+tests are all about clicking and typing as a user.
+
+Although this is quite effective for proving that we have working software, it
+comes at a cost. Integration tests tend to be much slower and more brittle than
+their unit counterparts.
+
+Many test types are neither purely unit nor integration tests. Instead, they lie
+somewhere in between, testing several components together but not the full
+system.
+
+![Rails Test Types](images/rails-test-types.png)
+
+We like to build our test suite using a combination of these to create a
+[**testing pyramid**](http://martinfowler.com/bliki/TestPyramid.html). This is a
+suite that has a few high-level integration tests that cover the general
+functionality of the app, several intermediate-level tests that cover a
+sub-system in more detail, and many unit tests to cover the nitty-gritty details
+of each component.
+
+This approach plays to the strength of each type of test while attempting to
+minimize the downsides they have (such as slow run times).
+
 ## Feature Specs
 
 Feature specs simulate a user opening your app in a browser and interacting with
@@ -1467,3 +1505,371 @@ that adding additional tests for associations is rarely worth it, as
 associations will be tested at an integration level. Since we haven't found them
 useful for catching regressions or for helping us drive our code, we have
 stopped using them.
+
+## Request Specs
+
+Request specs are integration tests that allow you to send a request and make
+assertions on its response. As end-to-end tests, they go through the entire
+Rails stack from route to response. Unlike feature specs, request specs do not
+work with Capybara. Instead of interacting with the page like you would with
+Capybara, you can only make basic assertions against the response, such as
+testing the status code, redirection, or that text appeared in the response
+body.
+
+Request specs should be used to test API design, as you want to be confident
+that the URLs in your API will not change. However, request specs can be used
+for any request, not just APIs.
+
+In this chapter, we'll add a basic API to our app to show how you might test one
+with request specs.
+
+### Viewing links
+
+The first endpoint we'll create is for an index of all existing links, from
+hottest to coldest. We'll namespace everything under `/api/v1`.
+
+```ruby
+# spec/requests/api/v1/links_spec.rb
+require "rails_helper"
+
+RSpec.describe "GET /api/v1/links" do
+  it "returns a list of all links, hottest first" do
+    coldest_link = create(:link)
+    hottest_link = create(:link, upvotes: 2)
+
+    get "/api/v1/links"
+
+    expect(json_body["links"].count).to eq(2)
+
+    hottest_link_json = json_body["links"][0]
+    expect(hottest_link_json).to eq({
+      "id" => hottest_link.id,
+      "title" => hottest_link.title,
+      "url" => hottest_link.url,
+      "upvotes" => hottest_link.upvotes,
+      "downvotes" => hottest_link.downvotes,
+    })
+  end
+end
+```
+
+We name our request spec files after the paths they test. In this case requests
+to `/api/v1/links` will be tested in `spec/api/v1/links_spec.rb`.
+
+After setting up our data, we make a `GET` request with the built-in `get` method. We
+then assert on the number of records returned in the JSON payload. Since all of
+our requests will be JSON, and we are likely to be parsing each of them, I've
+extracted a method `json_body` that parses the `response` object that is
+provided by `rack-test`.
+
+```ruby
+# spec/support/api_helpers.rb
+module ApiHelpers
+  def json_body
+    JSON.parse(response.body)
+  end
+end
+
+RSpec.configure do |config|
+  config.include ApiHelpers, type: :request
+end
+```
+
+I pulled the method out to its own file in `spec/support`, and include it
+automatically in all request specs.
+
+We could have tested the entire body of the response, but that would have been
+cumbersome to write. Asserting upon the length of the response and the structure
+of the first JSON object should be enough to have reasonable confidence that
+this is working properly.
+
+### Creating links
+
+Next, we'll test creating a new link via our API:
+
+```ruby
+# spec/requests/api/v1/links_spec.rb
+RSpec.describe "POST /api/v1/links" do
+  it "creates the link" do
+    link_params = attributes_for(:link)
+
+    post "/api/v1/links", link: link_params
+
+    expect(response.status).to eq 201
+    expect(Link.last.title).to eq link_params[:title]
+  end
+
+  context "when there are invalid attributes" do
+    it "returns a 422, with errors" do
+      link_params = attributes_for(:link, :invalid)
+
+      post "/api/v1/links", link: link_params
+
+      expect(response.status).to eq 422
+      expect(json_body.fetch("errors")).not_to be_empty
+    end
+  end
+end
+```
+
+`attributes_for` is another FactoryGirl method, which gives you a hash of the
+attributes defined in your factory. In this case, it would return:
+
+```
+{ title: "Testing Rails", url: "http://testingrailsbook.com" }
+```
+
+This time, we `POST` to `/api/v1/links`. `post` takes a second hash argument for
+the data to be sent to the server. We assert on the response status. `201`
+indicates that the request succeeded in creating a new record. We then check
+that the last `Link` has the title we expect to ensure it is creating a record
+using the data we submitted.
+
+In the second test, we introduce a new FactoryGirl concept called traits. Traits
+are specialized versions of factories. To declare them, you nest them under
+a factory definition. This will give them all the attributes of the parent
+factory, as well as any of the modifications specified in the trait. With the
+new trait, our `Link` factory looks like this:
+
+```ruby
+# spec/factories.rb
+factory :link do
+  title "Testing Rails"
+  url "http://testingrailsbook.com"
+
+  trait :invalid do
+    title nil
+  end
+end
+```
+
+The `:invalid` trait nulls out the `title` field so we can easily create invalid
+records in a reusable manner.
+
+## View Specs
+
+View specs allow you to test the logic in your views. While this logic should be
+minimal, there are certainly times where you'll want to pull out the handy view
+spec to test some critical functionality. A common antipattern in test suites is
+testing too much in feature specs, which tend to be slow. This is especially a
+problem when you have multiple tests covering similar functionality, with minor
+variations.
+
+In this section, we'll allow image links to be rendered inline. The main
+functionality of displaying link posts was tested previously in a feature spec.
+Aside from the already tested logic for creating a link, rendering a link post
+as an inline image is mostly view logic. Instead of duplicating that
+functionality in another feature spec, we'll write a view spec, which should
+cover our use case and minimize test suite runtime.
+
+### Rendering Images Inline
+
+In order to keep our link rendering logic DRY, I moved all of it into
+`app/views/links/_link.html.erb`. This way, we can reuse that partial anywhere
+we want to display a link, and it can correctly render with or without the image
+tag.
+
+The associated spec looks like this:
+
+```ruby
+# spec/views/links/_link.html.erb_spec.rb
+require "rails_helper"
+
+RSpec.describe "links/_link.html.erb" do
+  context "if the url is an image" do
+    it "renders the image inline" do
+      link = build(:link, url: "http://example.com/image.jpg")
+
+      render partial: "links/link.html.erb", locals: { link: link }
+
+      expect(rendered).to have_selector "img[src='#{link.url}']"
+    end
+  end
+end
+```
+
+In this spec, we build a link with an image URL, then `render` our partial with
+our link as a local variable. We then make a simple assertion that the image
+appears in the rendered html.
+
+When I initially implemented this partial, I had forgotten to also render the
+image on the link's show page. Since some functionality I expected to see wasn't
+implemented, I wrote a test to cover that case as well.
+
+```ruby
+# spec/views/links/show.html.erb_spec.rb
+require "rails_helper"
+
+RSpec.describe "links/show.html.erb" do
+  context "if the url is an image" do
+    it "renders the image inline" do
+      link = build(:link, url: "http://example.com/image.jpg")
+      assign(:link, link)
+
+      render
+
+      expect(rendered).to have_selector "img[src='#{link.url}']"
+    end
+  end
+end
+```
+
+This test is similar to the previous one, but this time we are rendering a view
+as opposed to a partial view. First, instead of a local variable we need to
+assign an instance variable. `assign(:link, link)` will assign the value of the
+variable `link` to the instance variable `@link` in our rendered view.
+
+Instead of specifying the view to render, this time we let RSpec work its
+"magic". RSpec infers the view it should render based on the name of the file in
+the `describe` block.
+
+## Controller Specs
+
+Controller specs exist in a weird space between other test types. They have some
+overlap with many of the other test types discussed so far so their use can be
+controversial.
+
+In terms of scope they aren't really unit tests because controllers are so
+tightly coupled to other parts of the Rails infrastructure. On the other hand,
+they aren't integration tests either because requests don't go through the
+routes and don't render the view.
+
+As their name implies, controller specs are used to test the logic in a
+controller. We've previously seen that feature specs can drive the creation of a
+controller. Given that Rails developers actively try to keep logic out of their
+controllers and that feature specs do cover controllers, controller tests can
+often be redundant. A good rule of thumb is that you don't need a controller
+test until you introduce conditional logic to your controller. In our
+experience, we tend to write very few controller specs in our applications.
+
+As previously mentioned, feature specs are *slow* (relative to other spec
+types). They are best used to test flows through an application. If there are
+multiple ways to error out of a flow early, it can be expensive to write the
+same feature spec over and over with minor variations.
+
+Time for a controller spec! Or what about a request spec? The two spec types are
+quite similar and there are many situations where either would do the job. The
+main difference is that controller specs don't actually render views or hit URLs
+and go through the routing system.
+
+So if you have logic in a controller and
+
+* the forking logic is part of two distinct and important features, you may want
+  a **feature spec**
+* you care about the URL, you may want a **request spec**
+* you care about the rendered content, you may want a **request spec** or even a
+  **view spec**
+* none of the above apply, you may want a **controller spec** or a **request
+  spec**
+
+One common rule of thumb is to use feature specs for **happy paths** and
+controller tests for the **sad paths**.
+
+They "happy path" is where everything succeeds (e.g. successfully navigating the
+app and submitting a link) while the "sad path" is where a failure occurs (e.g.
+successfully navigating the app but submitting an invalid link). Some flows
+through the app have multiple points of potential failure so there can be
+multiple "sad paths" for a given "happy path".
+
+All this being said, let's look at an actual controller spec! In this section,
+we'll be rewriting the tests for the invalid link case to use a controller spec
+rather than a feature spec.
+
+### Invalid Links
+
+In this test, we want to try and submit an invalid link and expect that it will
+not succeed but that the form will be re-rendered.
+
+The specs looks like this:
+
+```ruby
+# spec/controllers/links_controller_spec.rb
+require "rails_helper"
+
+RSpec.describe LinksController, "#create" do
+  context "when the link is invalid" do
+    it "re-renders the form" do
+      post :create, link: attributes_for(:link, :invalid)
+
+      expect(response).to render_template :new
+    end
+  end
+end
+```
+
+Just like with the request spec, the `post` method will make a `POST` request.
+However, unlike the request spec, we are making the request directly to a
+controller action rather than to a URL.
+
+The first parameter to `post` is the action we want to exercise. In addition, we
+may pass an optional hash of params. Since we are simulating a form submission,
+we need a hash of attributes nested under the `link` key. We can generate these
+attributes by taking advantage of the invalid link factory we created
+earlier. Finally, the controller is inferred from the `RSpec.describe`.
+
+This will make a `POST` request to the `LinksController#create` action with an
+invalid link as its payload.
+
+Controller specs expose a `response` object that we can assert against. Although
+we cannot assert against actual rendered content, we can assert against the name
+of the template that will be rendered.
+
+It is worth noting here that this spec is *not* equivalent to the feature spec
+it replaces. The feature test tested that an error message *actually appeared on
+the page*. The controller test, on the other hand, only tests that the form gets
+re-rendered.
+
+This is one of those situations where you have to make a judgment call. Is it
+important to you to test that not only does the application handles the error,
+but also that an error message shows up on the page? Is it worth trading a slow
+and somewhat duplicated feature spec for a faster controller test that doesn't
+test the UI? Would a request spec be a good compromise option? What about a
+controller spec plus a view spec to test the both sides independently?
+
+All of these options are valid solutions. Based on the context you will pick the
+one that gives you the best combination of confidence, coverage, and speed.
+
+## Helper Specs
+
+Helpers are generally one-off functions that don't really fit anywhere else.
+They can be particularly easy to test due to their small scope and lack of
+side-effects.
+
+We will add some formatting to the display of a link's score. While a high score
+means that a link is popular, a low score can have multiple meanings. Is it new?
+Is it controversial and thus has a high number of both positive and negative
+votes? Is it just boring?
+
+To make some of the context more obvious, we will format the score as `5 (+7,
+-2)` instead of just showing the net score.
+
+### Formatting the score
+
+Formatting is not a model-level concern. Instead, we are going to implement it
+as a helper method. In TDD fashion we start with a test:
+
+```ruby
+# spec/helpers/application_helper_spec.rb
+require "rails_helper"
+
+RSpec.describe ApplicationHelper, "#formatted_score_for" do
+  it "displays the net score along with the raw votes" do
+    link = Link.new(upvotes: 7, downvotes: 2)
+    formatted_score = helper.formatted_score_for(link)
+
+    expect(formatted_score).to eq "5 (+7, -2)"
+  end
+end
+```
+
+Since we don't need to persist to the database and don't care about validity, we
+are using `Link.new` here instead of `FactoryGirl`.
+
+Helpers are modules. Because of this, we can't instantiate them to test inside a
+spec, instead they must be mixed into an object. RSpec helps us out here by
+providing the `helper` object that automatically mixes in the described helper.
+All of the methods on the helper can be called on `helper`.
+
+It is worth noting here that this is not a pure unit test since it depends on
+both the helper *and* the `Link` model. In a later chapter, we will talk about
+**doubles** and how they can be used to isolate code from its collaborators.
