@@ -40,7 +40,7 @@ So if you have logic in a controller and
 One common rule of thumb is to use feature specs for **happy paths** and
 controller tests for the **sad paths**.
 
-They "happy path" is where everything succeeds (e.g. successfully navigating the
+The "happy path" is where everything succeeds (e.g. successfully navigating the
 app and submitting a link) while the "sad path" is where a failure occurs (e.g.
 successfully navigating the app but submitting an invalid link). Some flows
 through the app have multiple points of potential failure so there can be
