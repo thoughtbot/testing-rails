@@ -8,7 +8,7 @@ find build \
   -exec cp -Rv {} release/ \;
 
 # https://github.com/pbrisbin/vbump
-tag="$(git tag | ../vbump/bin/vbump "${1:-patch}")"
+tag="$(git tag | ./bin/vbump "${1:-patch}")"
 git add release
 git commit -m "Releasing $tag"
 git tag -m "$tag" "$tag"

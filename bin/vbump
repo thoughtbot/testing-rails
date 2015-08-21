@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# pbrisbin 2015
+# modified version of https://github.com/pbrisbin/vbump
+#
+# This script depends on the `gsort` (GNU sort) and `gsed` (GNU sed) commands. If
+# they are not found, the script will attempt to install them via homebrew (OSX
+# package manager)
+#
+###
+err_usage() {
+  printf "error: %s\n" "$*" >&2
+  echo 'usage: vbump [major|minor|patch]' >&2
+  exit 64
+}
+
+split() {
+  local pattern='s/v\([0-9]\+\)\.\([0-9]\+\)\.\([0-9]\+\)\(.*\)/\1 \2 \3 \4/'
+
+  gsort -rV | head -n 1 | gsed "$pattern"
+}
+
+bump() {
+  local major minor patch
+
+  read major minor patch _
+
+  case "$1" in
+    major)
+      major=$((major + 1))
+      minor=0
+      patch=0
+      ;;
+    minor)
+      minor=$((minor + 1))
+      patch=0
+      ;;
+    patch)
+      patch=$((patch + 1))
+      ;;
+
+    *) err_usage "invalid component: \`$1'" ;;
+  esac
+
+  printf "v%s.%s.%s\n" $major $minor $patch
+}
+
+if ! command -v gsort > /dev/null; then
+  brew install coreutils
+fi
+
+split | bump "${1:-patch}"
