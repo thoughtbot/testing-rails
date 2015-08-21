@@ -93,6 +93,14 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><a href="#formatting-the-score">Formatting the score</a></li>
 </ul></li>
 </ul></li>
+<li><a href="#intermediate-testing">Intermediate Testing</a><ul>
+<li><a href="#testing-in-isolation">Testing in isolation</a><ul>
+<li><a href="#test-doubles">Test doubles</a></li>
+<li><a href="#historical-note">Historical note</a></li>
+<li><a href="#benefits">Benefits</a></li>
+<li><a href="#a-pragmatic-approach-1">A pragmatic approach</a></li>
+</ul></li>
+</ul></li>
 </ul>
 </nav>
 <p></p>
@@ -892,7 +900,7 @@ require <span class="st">&quot;rails_helper&quot;</span>
 <li>none of the above apply, you may want a <strong>controller spec</strong> or a <strong>request spec</strong></li>
 </ul>
 <p>One common rule of thumb is to use feature specs for <strong>happy paths</strong> and controller tests for the <strong>sad paths</strong>.</p>
-<p>They “happy path” is where everything succeeds (e.g. successfully navigating the app and submitting a link) while the “sad path” is where a failure occurs (e.g. successfully navigating the app but submitting an invalid link). Some flows through the app have multiple points of potential failure so there can be multiple “sad paths” for a given “happy path”.</p>
+<p>The “happy path” is where everything succeeds (e.g. successfully navigating the app and submitting a link) while the “sad path” is where a failure occurs (e.g. successfully navigating the app but submitting an invalid link). Some flows through the app have multiple points of potential failure so there can be multiple “sad paths” for a given “happy path”.</p>
 <p>All this being said, let’s look at an actual controller spec! In this section, we’ll be rewriting the tests for the invalid link case to use a controller spec rather than a feature spec.</p>
 <section id="invalid-links" class="level3">
 <h3>Invalid Links</h3>
@@ -941,6 +949,142 @@ require <span class="st">&quot;rails_helper&quot;</span>
 <p>Since we don’t need to persist to the database and don’t care about validity, we are using <code>Link.new</code> here instead of <code>FactoryGirl</code>.</p>
 <p>Helpers are modules. Because of this, we can’t instantiate them to test inside a spec, instead they must be mixed into an object. RSpec helps us out here by providing the <code>helper</code> object that automatically mixes in the described helper. All of the methods on the helper can be called on <code>helper</code>.</p>
 <p>It is worth noting here that this is not a pure unit test since it depends on both the helper <em>and</em> the <code>Link</code> model. In a later chapter, we will talk about <strong>doubles</strong> and how they can be used to isolate code from its collaborators.</p>
+</section>
+</section>
+</section>
+<section id="intermediate-testing" class="level1">
+<h1>Intermediate Testing</h1>
+<section id="testing-in-isolation" class="level2">
+<h2>Testing in isolation</h2>
+<p>In a previous chapter we discussed <strong>unit tests</strong>, tests that exercise a single component of a system in isolation. That’s nice in theory, but in the real world most objects depend on <strong>collaborators</strong> which may in turn depend on their own collaborators. You set out to test a single object and end up with a whole sub-system.</p>
+<p>Say we want to add the ability to calculate whether or not a link is controversial. We’re starting to have lot of score-related functionality so we extract it into its own <code>Score</code> object that takes in a <code>Link</code> in its constructor. <code>Score</code> implements the following: <code>#upvotes</code>, <code>#downvotes</code>, <code>#value</code>, and <code>#controversial?</code>.</p>
+<p>The spec looks like:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/score_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">Score</span> <span class="kw">do</span>
+  describe <span class="st">&quot;#upvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the upvotes on the link&quot;</span> <span class="kw">do</span>
+      link = <span class="dt">Link</span>.new(upvotes: <span class="dv">10</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.upvotes).to eq <span class="dv">10</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#downvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the downvotes on the link&quot;</span> <span class="kw">do</span>
+      link = <span class="dt">Link</span>.new(downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.downvotes).to eq <span class="dv">5</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#value&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the difference between up and down votes&quot;</span> <span class="kw">do</span>
+      link = <span class="dt">Link</span>.new(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">3</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.value).to eq <span class="dv">7</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#controversial?&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is true for posts where up/down votes are within 20% of each other&quot;</span> <span class="kw">do</span>
+      controversial_link = <span class="dt">Link</span>.new(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">9</span>)
+      score = <span class="dt">Score</span>.new(controversial_link)
+
+      expect(score).to be_controversial
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;is false for posts where up/down votes have &gt; 20% difference&quot;</span> <span class="kw">do</span>
+      non_controversial_link = <span class="dt">Link</span>.new(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(non_controversial_link)
+
+      expect(score).not_to be_controversial
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>The <strong>system under test</strong> (often abbreviated SUT) is the unit we are trying to test. In this case, the SUT is the instance of <code>Score</code> which we’ve named <code>score</code> in each test. However, <code>score</code> can’t do it’s work alone. It needs help from a <strong>collaborator</strong>. Here, the collaborator (<code>Link</code>) is passed in as a parameter to <code>Score</code>’s constructor.</p>
+<p>You’ll notice the tests all follow the same pattern. First, we create an instance of <code>Link</code>. Then we use it to build an instance of <code>Score</code>. Finally, we test behavior on the score. Our test can now <em>fail for reasons completely unrelated to the score object</em>:</p>
+<ul>
+<li>There is no <code>Link</code> class defined yet</li>
+<li><code>Link</code>’s constructor expects different arguments</li>
+<li><code>Link</code> does not implement the instance methods <code>#upvotes</code> and <code>#downvotes</code></li>
+</ul>
+<p>Note that the collaborator doesn’t <em>have</em> to be an instance of <code>Link</code>. Ruby is a <strong>duck-typed</strong> language which means that collaborators just need to implement an expected set of methods rather than be of a given class. In the case of the <code>Score</code>’s constructor, any object that implements the <code>#upvotes</code>, and <code>#downvotes</code> methods could be a collaborator. For example if we introduce comments that could be upvoted/downvoted, <code>Comment</code> would be another equally valid collaborator.</p>
+<p>Ideally, in a pure unit test we could isolate the SUT from its collaborators so that only the SUT would cause our spec to fail. In fact, we should be able to TDD the SUT even if collaborating components haven’t been built yet.</p>
+<section id="test-doubles" class="level3">
+<h3>Test doubles</h3>
+<p>RSpec gives us <strong>test doubles</strong> (sometimes also called <strong>mock objects</strong>) which act as fake collaborators in tests. The name derives from stunt doubles in movies that stand in for the real actor when a difficult stunt needs to be done. Test doubles are constructed with the <code>double</code> method. It takes an optional hash of methods it needs to respond to as well as their return values.</p>
+<p>Let’s try using this in our spec:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/score_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">Score</span> <span class="kw">do</span>
+  describe <span class="st">&quot;#upvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the upvotes on the link&quot;</span> <span class="kw">do</span>
+      link = double(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">0</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.upvotes).to eq <span class="dv">10</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#downvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the downvotes on the link&quot;</span> <span class="kw">do</span>
+      link = double(upvotes: <span class="dv">0</span>, downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.downvotes).to eq <span class="dv">5</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#value&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the difference between up and down votes&quot;</span> <span class="kw">do</span>
+      link = double(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">3</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.value).to eq <span class="dv">7</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#controversial?&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is true for posts where up/down votes are within 20% of each other&quot;</span> <span class="kw">do</span>
+      controversial_link = double(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">9</span>)
+      score = <span class="dt">Score</span>.new(controversial_link)
+
+      expect(score).to be_controversial
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;is false for posts where up/down votes have &gt; 20% difference&quot;</span> <span class="kw">do</span>
+      non_controversial_link = double(upvotes: <span class="dv">10</span>, downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(non_controversial_link)
+
+      expect(score).not_to be_controversial
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>Here, we’ve replaced the dependency on <code>Link</code> and are constructing a double that responds to the following interface:</p>
+<ul>
+<li><code>upvotes</code></li>
+<li><code>downvotes</code></li>
+</ul>
+</section>
+<section id="historical-note" class="level3">
+<h3>Historical note</h3>
+<p>Older versions of RSpec had methods named <code>stub</code> and <code>mock</code> as aliases to <code>double</code>. This is particularly confusing because <strong>mocking</strong> and <strong>stubbing</strong> are entirely different concepts (more on them later). To make things worse, RSpec also monkeypatched <code>Object</code> with an <code>Object.stub</code> method which <em>did</em> do real stubbing. You shouldn’t run into these unless you are working with a legacy test suite.</p>
+</section>
+<section id="benefits" class="level3">
+<h3>Benefits</h3>
+<p>Taking this approach yields several benefits. Because we aren’t using real collaborators, we can TDD a unit of code even if the collaborators haven’t been written yet.</p>
+<p>Using test doubles gets painful for components that are highly coupled to many collaborators. Let that pain drive you to reduce the coupling in your system. Remember the final step of the TDD cycle is <em>refactor</em>.</p>
+<p>Test doubles make the interfaces the SUT depends on explicit. Whereas the old spec said that the helper method relied on a <code>Link</code>, the new spec says that methods on <code>Score</code> depend on an object that must implement <code>#upvotes</code>, and <code>#downvotes</code>. This improves the unit tests as a source of documentation.</p>
+</section>
+<section id="a-pragmatic-approach-1" class="level3">
+<h3>A pragmatic approach</h3>
+<p>Sometimes you need to test a component that is really tightly coupled with another. When this is framework code it is often better just to back up a bit and test the two components together. For example models that inherit from <code>ActiveRecord::Base</code> are coupled to ActiveRecord’s database code. Trying to isolate the model from the database can get really painful and there’s nothing you can do about it because you don’t own the ActiveRecord code.</p>
 </section>
 </section>
 </section>

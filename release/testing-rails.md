@@ -1765,7 +1765,7 @@ So if you have logic in a controller and
 One common rule of thumb is to use feature specs for **happy paths** and
 controller tests for the **sad paths**.
 
-They "happy path" is where everything succeeds (e.g. successfully navigating the
+The "happy path" is where everything succeeds (e.g. successfully navigating the
 app and submitting a link) while the "sad path" is where a failure occurs (e.g.
 successfully navigating the app but submitting an invalid link). Some flows
 through the app have multiple points of potential failure so there can be
@@ -1873,3 +1873,197 @@ All of the methods on the helper can be called on `helper`.
 It is worth noting here that this is not a pure unit test since it depends on
 both the helper *and* the `Link` model. In a later chapter, we will talk about
 **doubles** and how they can be used to isolate code from its collaborators.
+
+# Intermediate Testing
+
+## Testing in isolation
+
+In a previous chapter we discussed **unit tests**, tests that exercise a single
+component of a system in isolation. That's nice in theory, but in the real world
+most objects depend on **collaborators** which may in turn depend on their own
+collaborators. You set out to test a single object and end up with a whole
+sub-system.
+
+Say we want to add the ability to calculate whether or not a link is
+controversial. We're starting to have lot of score-related functionality so we
+extract it into its own `Score` object that takes in a `Link` in its
+constructor. `Score` implements the following: `#upvotes`, `#downvotes`,
+`#value`, and `#controversial?`.
+
+The spec looks like:
+
+```ruby
+# spec/models/score_spec.rb
+require "rails_helper"
+
+RSpec.describe Score do
+  describe "#upvotes" do
+    it "is the upvotes on the link" do
+      link = Link.new(upvotes: 10)
+      score = Score.new(link)
+
+      expect(score.upvotes).to eq 10
+    end
+  end
+
+  describe "#downvotes" do
+    it "is the downvotes on the link" do
+      link = Link.new(downvotes: 5)
+      score = Score.new(link)
+
+      expect(score.downvotes).to eq 5
+    end
+  end
+
+  describe "#value" do
+    it "is the difference between up and down votes" do
+      link = Link.new(upvotes: 10, downvotes: 3)
+      score = Score.new(link)
+
+      expect(score.value).to eq 7
+    end
+  end
+
+  describe "#controversial?" do
+    it "is true for posts where up/down votes are within 20% of each other" do
+      controversial_link = Link.new(upvotes: 10, downvotes: 9)
+      score = Score.new(controversial_link)
+
+      expect(score).to be_controversial
+    end
+
+    it "is false for posts where up/down votes have > 20% difference" do
+      non_controversial_link = Link.new(upvotes: 10, downvotes: 5)
+      score = Score.new(non_controversial_link)
+
+      expect(score).not_to be_controversial
+    end
+  end
+end
+```
+
+The **system under test** (often abbreviated SUT) is the unit we are trying to
+test. In this case, the SUT is the instance of `Score` which we've named `score`
+in each test. However, `score` can't do it's work alone. It needs help from a
+**collaborator**. Here, the collaborator (`Link`) is passed in as a parameter to
+`Score`'s constructor.
+
+You'll notice the tests all follow the same pattern. First, we create an
+instance of `Link`. Then we use it to build an instance of `Score`. Finally, we
+test behavior on the score. Our test can now *fail for reasons completely
+unrelated to the score object*:
+
+* There is no `Link` class defined yet
+* `Link`'s constructor expects different arguments
+* `Link` does not implement the instance methods `#upvotes` and `#downvotes`
+
+Note that the collaborator doesn't *have* to be an instance of `Link`. Ruby is a
+**duck-typed** language which means that collaborators just need to implement an
+expected set of methods rather than be of a given class. In the case of the
+`Score`'s constructor, any object that implements the `#upvotes`, and
+`#downvotes` methods could be a collaborator. For example if we introduce
+comments that could be upvoted/downvoted, `Comment` would be another equally
+valid collaborator.
+
+Ideally, in a pure unit test we could isolate the SUT from its collaborators so
+that only the SUT would cause our spec to fail. In fact, we should be able to
+TDD the SUT even if collaborating components haven't been built yet.
+
+### Test doubles
+
+RSpec gives us **test doubles** (sometimes also called **mock objects**) which
+act as fake collaborators in tests. The name derives from stunt doubles in
+movies that stand in for the real actor when a difficult stunt needs to be done.
+Test doubles are constructed with the `double` method. It takes an optional hash
+of methods it needs to respond to as well as their return values.
+
+Let's try using this in our spec:
+
+```ruby
+# spec/models/score_spec.rb
+require "rails_helper"
+
+RSpec.describe Score do
+  describe "#upvotes" do
+    it "is the upvotes on the link" do
+      link = double(upvotes: 10, downvotes: 0)
+      score = Score.new(link)
+
+      expect(score.upvotes).to eq 10
+    end
+  end
+
+  describe "#downvotes" do
+    it "is the downvotes on the link" do
+      link = double(upvotes: 0, downvotes: 5)
+      score = Score.new(link)
+
+      expect(score.downvotes).to eq 5
+    end
+  end
+
+  describe "#value" do
+    it "is the difference between up and down votes" do
+      link = double(upvotes: 10, downvotes: 3)
+      score = Score.new(link)
+
+      expect(score.value).to eq 7
+    end
+  end
+
+  describe "#controversial?" do
+    it "is true for posts where up/down votes are within 20% of each other" do
+      controversial_link = double(upvotes: 10, downvotes: 9)
+      score = Score.new(controversial_link)
+
+      expect(score).to be_controversial
+    end
+
+    it "is false for posts where up/down votes have > 20% difference" do
+      non_controversial_link = double(upvotes: 10, downvotes: 5)
+      score = Score.new(non_controversial_link)
+
+      expect(score).not_to be_controversial
+    end
+  end
+end
+```
+
+Here, we've replaced the dependency on `Link` and are constructing a double that
+responds to the following interface:
+
+* `upvotes`
+* `downvotes`
+
+### Historical note
+
+Older versions of RSpec had methods named `stub` and `mock` as aliases to
+`double`. This is particularly confusing because **mocking** and **stubbing**
+are entirely different concepts (more on them later). To make things worse,
+RSpec also monkeypatched `Object` with an `Object.stub` method which *did* do
+real stubbing. You shouldn't run into these unless you are working with a legacy
+test suite.
+
+### Benefits
+
+Taking this approach yields several benefits. Because we aren't using real
+collaborators, we can TDD a unit of code even if the collaborators haven't been
+written yet.
+
+Using test doubles gets painful for components that are highly coupled to many
+collaborators. Let that pain drive you to reduce the coupling in your system.
+Remember the final step of the TDD cycle is *refactor*.
+
+Test doubles make the interfaces the SUT depends on explicit. Whereas the old
+spec said that the helper method relied on a `Link`, the new spec says that
+methods on `Score` depend on an object that must implement `#upvotes`, and
+`#downvotes`. This improves the unit tests as a source of documentation.
+
+### A pragmatic approach
+
+Sometimes you need to test a component that is really tightly coupled with
+another. When this is framework code it is often better just to back up a bit
+and test the two components together. For example models that inherit from
+`ActiveRecord::Base` are coupled to ActiveRecord's database code. Trying to
+isolate the model from the database can get really painful and there's nothing
+you can do about it because you don't own the ActiveRecord code.
