@@ -193,7 +193,7 @@ If you've found all this a bit complex, don't worry. How it works is less
 important than being able to write assertions using the syntax. We'll be writing
 a lot of tests, so the syntax will soon become familiar.
 
-Take a look at the [rspec-expectations] gem to see all of the build in matchers.
+Take a look at the [rspec-expectations] gem to see all of the built-in matchers.
 
 [rspec-expectations]: https://github.com/rspec/rspec-expectations
 
