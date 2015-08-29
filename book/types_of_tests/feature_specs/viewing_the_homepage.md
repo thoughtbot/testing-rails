@@ -29,7 +29,7 @@ software. Imagine we have a large application, with hundreds of tests, each one
 having created a `Link` the manual way. If we were to add a required field to
 links, we would have to go through all of our tests and add the required field
 for _all_ of these tests to get them to pass again. There are two widely used
-fixes for this painpoint. The first one is called fixtures.
+fixes for this pain point. The first one is called fixtures.
 
 #### Fixtures
 
@@ -171,7 +171,7 @@ link = create(:link)
 ```
 
 To setup our test, we create a link using FactoryGirl's `.create` method, which
-instantiates a new `Link` object with our (currently non-existant) factory
+instantiates a new `Link` object with our (currently non-existent) factory
 definition and persists it to the database.
 
 `.create` is loaded into the global context in `spec/support/factory_girl.rb`:

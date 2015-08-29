@@ -47,7 +47,7 @@ downvote count, then compare the expected and actual scores.
 
 ` spec/models/link_spec.rb@d4001c148:28,34
 
-In this test, you'll notice that we forego FactoryGirl and use plain ol'
+In this test, you'll notice that we forgo FactoryGirl and use plain ol'
 ActiveRecord to instantiate our object. `#score` depends on `#upvotes` and
 `#downvotes`, which we can set without saving our object. Since we never have to
 save our object, we don't need FactoryGirl to set up a valid record.

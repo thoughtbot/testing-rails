@@ -11,7 +11,7 @@ The associated spec looks like this:
 
 In this spec, we build a link with an image URL, then `render` our partial with
 our link as a local variable. We then make a simple assertion that the image
-appears in the rendered html.
+appears in the rendered HTML.
 
 When I initially implemented this partial, I had forgotten to also render the
 image on the link's show page. Since some functionality I expected to see wasn't
