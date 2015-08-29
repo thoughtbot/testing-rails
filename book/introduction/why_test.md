@@ -13,13 +13,13 @@ but it unexpectedly breaks old features and you might not even know it. This is
 called a **regression**. At one point your code worked, but you later introduced
 new code which broke the old functionality.
 
-A better way is to have the computer check our work. We write sofware to
+A better way is to have the computer check our work. We write software to
 automate our lives, so why not write programs to test our code as well?
 **Automated tests** are small scripts that output whether or not your code works
 as intended. They verify that our program works now, and will continue to work
 in the future, without humans having to test it by hand. Once you write a test,
 you should be able to reuse it for the lifetime of the code it tests, although
-your tests can change as expections of your application change.
+your tests can change as expectations of your application change.
 
 Any large scale and long lasting Rails application should have a comprehensive
 test suite. A **test suite** is the collection of tests that ensure that your

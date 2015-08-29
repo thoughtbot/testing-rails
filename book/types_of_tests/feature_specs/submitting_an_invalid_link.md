@@ -69,7 +69,7 @@ phase.
 
 **Teardown**
 
-During teardown, we clean-up after ourselves. This may involve reseting the
+During teardown, we clean-up after ourselves. This may involve resetting the
 database to it's pre-test state or resetting any modified global state. This is
 usually handled by our test framework.
 
