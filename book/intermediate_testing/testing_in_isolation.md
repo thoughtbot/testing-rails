@@ -7,7 +7,7 @@ collaborators. You set out to test a single object and end up with a whole
 sub-system.
 
 Say we want to add the ability to calculate whether or not a link is
-controversial. We're starting to have lot of score-related functionality so we
+controversial. We're starting to have a lot of score-related functionality so we
 extract it into its own `Score` object that takes in a `Link` in its
 constructor. `Score` implements the following: `#upvotes`, `#downvotes`,
 `#value`, and `#controversial?`.
