@@ -155,7 +155,7 @@ the id is for real, and replace it here.
 With the fields filled in, we can submit the form!
 
 ```ruby
-click_on "Shorten!"
+click_on "Submit!"
 ```
 
 And, finally, the assertion:
