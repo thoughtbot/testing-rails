@@ -29,4 +29,4 @@ won't cover in the book.
 Make sure to take a look at the application's [README], as it contains a summary
 of the application and instructions for setting it up.
 
-[README]: https://github.com/thoughtbot/testing-rails/blob/master/example_app/README.md
+[README]: https://github.com/thoughtbot/testing-rails/blob/master/example_app/README.rdoc
