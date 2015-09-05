@@ -180,8 +180,8 @@ definition and persists it to the database.
 config.include FactoryGirl::Syntax::Methods
 ```
 
-While we'll be calling `.create` in the global context to keep our code cleaner
-, you may see people calling it more explicitly: `FactoryGirl.create`. This is
+While we'll be calling `.create` in the global context to keep our code cleaner,
+you may see people calling it more explicitly: `FactoryGirl.create`. This is
 simply a matter of preference, and both are acceptable.
 
 Now, we'll need to add a factory definition for our `Link` class in
