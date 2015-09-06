@@ -6,7 +6,7 @@ hottest to coldest. We'll namespace everything under `/api/v1`.
 ` spec/requests/api/v1/links_spec.rb@f39adb6ff
 
 We name our request spec files after the paths they test. In this case requests
-to `/api/v1/links` will be tested in `spec/api/v1/links_spec.rb`.
+to `/api/v1/links` will be tested in `spec/requests/api/v1/links_spec.rb`.
 
 After setting up our data, we make a `GET` request with the built-in `get` method. We
 then assert on the number of records returned in the JSON payload. Since all of
