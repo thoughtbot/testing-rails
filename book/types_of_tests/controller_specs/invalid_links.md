@@ -5,7 +5,7 @@ not succeed but that the form will be re-rendered.
 
 The specs looks like this:
 
-` spec/controllers/links_controller_spec.rb@184cd3a2f64fa25b
+` spec/controllers/links_controller_spec.rb@19e77101e30f69dc
 
 Just like with the request spec, the `post` method will make a `POST` request.
 However, unlike the request spec, we are making the request directly to a

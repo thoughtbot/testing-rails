@@ -8,7 +8,7 @@ of methods it needs to respond to as well as their return values.
 
 Let's try using this in our spec:
 
-` spec/models/score_spec.rb@259c2be04b50ca58
+` spec/models/score_spec.rb@10efa8bc7779a520
 
 Here, we've replaced the dependency on `Link` and are constructing a double that
 responds to the following interface:

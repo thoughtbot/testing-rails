@@ -14,7 +14,7 @@ constructor. `Score` implements the following: `#upvotes`, `#downvotes`,
 
 The spec looks like:
 
-` spec/models/score_spec.rb@4df88c77ef2ef0dc
+` spec/models/score_spec.rb@e5de94e90a46b9d4
 
 The **system under test** (often abbreviated SUT) is the unit we are trying to
 test. In this case, the SUT is the instance of `Score` which we've named `score`
