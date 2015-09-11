@@ -39,6 +39,8 @@
 
 # Antipatterns
 
+<<[antipatterns/slow_tests.md]
+
 <<[antipatterns/testing_implementation_details.md]
 
 <<[antipatterns/using_factories_like_fixtures.md]
