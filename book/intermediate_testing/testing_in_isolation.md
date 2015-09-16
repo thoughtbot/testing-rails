@@ -53,4 +53,6 @@ TDD the SUT even if collaborating components haven't been built yet.
 
 <<[intermediate_testing/testing_in_isolation/benefits.md]
 
+<<[intermediate_testing/testing_in_isolation/dangers.md]
+
 <<[intermediate_testing/testing_in_isolation/a_pragmatic_approach.md]
