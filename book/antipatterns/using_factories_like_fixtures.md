@@ -27,7 +27,7 @@ to pass.
 When defining your factories, define the _minimum number of attributes for the
 model to pass validations_. Here's an example:
 
-```
+```ruby
 class User < ActiveRecord::Base
   validates :password_digest, presence: true
   validates :username, presence: true, uniqueness: true
@@ -64,7 +64,7 @@ more traits directly in the test, and only bring in the traits you need. Again,
 by defining only the attributes that are necessary, we can avoid coupling to
 default attributes in our tests.
 
-```
+```ruby
 class User < ActiveRecord::Base
   validates :password_digest, presence: true
   validates :username, presence: true, uniqueness: true

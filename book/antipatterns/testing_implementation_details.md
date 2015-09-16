@@ -13,7 +13,7 @@ The solution to this problem is to favor testing behavior over implementation.
 You should test _what_ your code does, not _how_ it does it. Let's use some code
 as an example:
 
-```
+```ruby
 class Numeric
   def negative?
     self < 0
@@ -31,7 +31,7 @@ end
 
 The following is a _bad_ test (not to mention, it doesn't fully test the method):
 
-```
+```ruby
 # this is bad
 
 describe "#absolute_value" do
@@ -52,7 +52,7 @@ code _and_ our test code.
 
 A better test would look like this:
 
-```
+```ruby
 describe "#absolute_value" do
   it "returns the number's distance from zero" do
     expect(absolute_value(4)).to eq 4
@@ -76,7 +76,7 @@ delegate to other methods. For example, many service objects will queue up a
 background job. Queuing that job is a crucial behavior of the service object,
 so it may be necessary to stub the job and assert it was called:
 
-```
+```ruby
 describe "Notifier#notify" do
   it "queues a NotifierJob" do
     allow(NotifierJob).to receive(:notify)
