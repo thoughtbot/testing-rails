@@ -15,12 +15,3 @@ responds to the following interface:
 
 * `upvotes`
 * `downvotes`
-
-### Historical note
-
-Older versions of RSpec had methods named `stub` and `mock` as aliases to
-`double`. This is particularly confusing because **mocking** and **stubbing**
-are entirely different concepts (more on them later). To make things worse,
-RSpec also monkeypatched `Object` with an `Object.stub` method which *did* do
-real stubbing. You shouldn't run into these unless you are working with a legacy
-test suite.
