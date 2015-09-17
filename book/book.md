@@ -45,4 +45,6 @@
 
 <<[antipatterns/testing_implementation_details.md]
 
+<<[antipatterns/let.md]
+
 <<[antipatterns/using_factories_like_fixtures.md]
