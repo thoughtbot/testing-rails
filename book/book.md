@@ -43,6 +43,8 @@
 
 <<[antipatterns/intermittent_failures.md]
 
+<<[antipatterns/brittle_tests.md]
+
 <<[antipatterns/testing_implementation_details.md]
 
 <<[antipatterns/let.md]
