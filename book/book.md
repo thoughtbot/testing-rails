@@ -37,6 +37,8 @@
 
 <<[intermediate_testing/testing_in_isolation.md]
 
+<<[intermediate_testing/external_services.md]
+
 # Antipatterns
 
 <<[antipatterns/slow_tests.md]
