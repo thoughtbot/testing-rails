@@ -96,9 +96,53 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <li><a href="#intermediate-testing">Intermediate Testing</a><ul>
 <li><a href="#testing-in-isolation">Testing in isolation</a><ul>
 <li><a href="#test-doubles">Test doubles</a></li>
-<li><a href="#historical-note">Historical note</a></li>
+<li><a href="#stubbing">Stubbing</a></li>
+<li><a href="#testing-side-effects">Testing Side Effects</a></li>
+<li><a href="#mocking">Mocking</a></li>
+<li><a href="#spying">Spying</a></li>
+<li><a href="#terminology">Terminology</a></li>
 <li><a href="#benefits">Benefits</a></li>
+<li><a href="#dangers">Dangers</a></li>
+<li><a href="#brittleness">Brittleness</a></li>
 <li><a href="#a-pragmatic-approach-1">A pragmatic approach</a></li>
+</ul></li>
+<li><a href="#external-services">External services</a><ul>
+<li><a href="#adapter-pattern">Adapter pattern</a></li>
+<li><a href="#injecting-an-adapter">Injecting an adapter</a></li>
+<li><a href="#spying-on-external-libraries">Spying on external libraries</a></li>
+<li><a href="#webmock">Webmock</a></li>
+<li><a href="#blocking-all-requests">Blocking all requests</a></li>
+<li><a href="#vcr">VCR</a></li>
+<li><a href="#fakes">Fakes</a></li>
+<li><a href="#the-best-approach">The best approach?</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#antipatterns">Antipatterns</a><ul>
+<li><a href="#slow-tests">Slow tests</a><ul>
+<li><a href="#use-profiling-to-find-the-slowest-tests">Use profiling to find the slowest tests</a></li>
+<li><a href="#have-a-fast-spec-helper">Have a fast spec helper</a></li>
+<li><a href="#use-an-application-preloader">Use an application preloader</a></li>
+<li><a href="#only-persist-what-is-necessary">Only persist what is necessary</a></li>
+<li><a href="#move-sad-paths-out-of-feature-specs">Move sad paths out of feature specs</a></li>
+<li><a href="#dont-hit-external-apis">Don’t hit external APIs</a></li>
+<li><a href="#delete-tests">Delete tests</a></li>
+</ul></li>
+<li><a href="#intermittent-failures">Intermittent Failures</a><ul>
+<li><a href="#database-contamination">Database contamination</a></li>
+<li><a href="#global-state">Global state</a></li>
+<li><a href="#time">Time</a></li>
+</ul></li>
+<li><a href="#brittle-tests">Brittle Tests</a><ul>
+<li><a href="#coupling-to-copy-and-the-dom">Coupling to copy and the DOM</a></li>
+</ul></li>
+<li><a href="#testing-implementation-details">Testing Implementation Details</a><ul>
+<li><a href="#gotcha">Gotcha</a></li>
+<li><a href="#private-methods">Private Methods</a></li>
+</ul></li>
+<li><a href="#let-subject-and-before">Let, Subject, and Before</a></li>
+<li><a href="#using-factories-like-fixtures">Using Factories Like Fixtures</a><ul>
+<li><a href="#defining-more-attributes-than-you-need">Defining more attributes than you need</a></li>
+<li><a href="#defining-multiple-factories-for-a-single-model">Defining multiple factories for a single model</a></li>
 </ul></li>
 </ul></li>
 </ul>
@@ -112,7 +156,7 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <p>As software developers, we are hired to write code that <em>works</em>. If our code doesn’t work, we have failed.</p>
 <p>So how do we ensure correctness?</p>
 <p>One way is to manually run your program after writing it. You write a new feature, open a browser, click around to see that it works, then continue adding more features. This works while your application is small, but at some point your program has too many features to keep track of. You write some new code, but it unexpectedly breaks old features and you might not even know it. This is called a <strong>regression</strong>. At one point your code worked, but you later introduced new code which broke the old functionality.</p>
-<p>A better way is to have the computer check our work. We write sofware to automate our lives, so why not write programs to test our code as well? <strong>Automated tests</strong> are small scripts that output whether or not your code works as intended. They verify that our program works now, and will continue to work in the future, without humans having to test it by hand. Once you write a test, you should be able to reuse it for the lifetime of the code it tests, although your tests can change as expections of your application change.</p>
+<p>A better way is to have the computer check our work. We write software to automate our lives, so why not write programs to test our code as well? <strong>Automated tests</strong> are small scripts that output whether or not your code works as intended. They verify that our program works now, and will continue to work in the future, without humans having to test it by hand. Once you write a test, you should be able to reuse it for the lifetime of the code it tests, although your tests can change as expectations of your application change.</p>
 <p>Any large scale and long lasting Rails application should have a comprehensive test suite. A <strong>test suite</strong> is the collection of tests that ensure that your system works. Before marking any task as “complete” (i.e. merging into the <code>master</code> branch of your Git repository), it is imperative to run your entire test suite to catch regressions. If you have written an effective test suite, and the test suite passes, you can be confident that your entire application behaves as expected.</p>
 <p>A test suite will be comprised of many different kinds of tests, varying in scope and subject matter. Some tests will be high level, testing an entire feature and walking through your application as if they were a real user. Others may be specific to a single line of code. We’ll discuss the varying flavors of tests in detail throughout this book.</p>
 <section id="saving-time-and-money" class="level3">
@@ -365,7 +409,7 @@ fill_in <span class="st">&quot;link_url&quot;</span>, with: link_url</code></pre
 <p>The fields we are looking for don’t exist yet, but they will soon. We’re using Rails convention over configuration here to guess what the fields are going to be called. We know that Rails gives ids to all fields by joining the model name and the field name. As long as we don’t customize those, we can use them to our advantage.</p>
 <p>Even if you didn’t know that, once we get around to running the test, you’d see it fail because it couldn’t find a field with that name, id, or label. At that point, you could open the page in your browser, inspect the element to see what the id is for real, and replace it here.</p>
 <p>With the fields filled in, we can submit the form!</p>
-<pre class="sourceCode ruby"><code class="sourceCode ruby">click_on <span class="st">&quot;Shorten!&quot;</span></code></pre>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">click_on <span class="st">&quot;Submit!&quot;</span></code></pre>
 <p>And, finally, the assertion:</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby">expect(page).to have_link link_title, href: link_url</code></pre>
 <p>There’s a lot going on here, including some “magic”, so let’s go through each of the components. While this syntax may look strange, remember that RSpec is just Ruby code. This could be rewritten as such:</p>
@@ -373,7 +417,7 @@ fill_in <span class="st">&quot;link_url&quot;</span>, with: link_url</code></pre
 <p><code>#expect</code> is an RSpec method that will build an assertion. It takes one value, which we will run an assertion against. In this case it’s taking the <code>page</code> object, which is a value provided by Capybara that gives access to the currently loaded page. To run the assertion, you call <code>#to</code> on the return value of <code>#expect</code> and pass it a <strong>matcher</strong>. The matcher is a method that returns truthy or falsy when run through our assertion. The matcher we’ve passed here is <code>#have_link</code>. <code>#have_link</code> comes from Capybara, and returns true if it finds a link with the given text on the page. In this case we also pass it a <code>href</code> option so it checks against the link’s URL.</p>
 <p>So now for the magic. <code>#have_link</code> doesn’t actually exist. RSpec defines matchers automatically for methods that start with <code>has_</code> and end with <code>?</code>. Capybara defines the method <code>#has_link?</code> on the <code>page</code> object, so we could think of this whole line as raising an error if <code>page.has_link?(...)</code> returns false. RSpec will automatically look for the method <code>#has_link?</code> when it sees <code>#have_link</code>.</p>
 <p>If you’ve found all this a bit complex, don’t worry. How it works is less important than being able to write assertions using the syntax. We’ll be writing a lot of tests, so the syntax will soon become familiar.</p>
-<p>Take a look at the <a href="https://github.com/rspec/rspec-expectations">rspec-expectations</a> gem to see all of the build in matchers.</p>
+<p>Take a look at the <a href="https://github.com/rspec/rspec-expectations">rspec-expectations</a> gem to see all of the built-in matchers.</p>
 </section>
 <section id="running-our-spec" class="level4">
 <h4>Running our spec</h4>
@@ -531,7 +575,7 @@ end</code></pre>
 <p><strong>Verify</strong></p>
 <p>During verify, we check our expectations against the result of the exercise phase.</p>
 <p><strong>Teardown</strong></p>
-<p>During teardown, we clean-up after ourselves. This may involve reseting the database to it’s pre-test state or resetting any modified global state. This is usually handled by our test framework.</p>
+<p>During teardown, we clean-up after ourselves. This may involve resetting the database to it’s pre-test state or resetting any modified global state. This is usually handled by our test framework.</p>
 <p>Four phase testing is more prominently used with model and unit tests, however it is still useful for our acceptance tests. This is especially true for simple tests like the two we’ve demonstrated, however some acceptance tests may be large enough to warrant even more grouping. It’s best to use your discretion and group things into logical sections to make code easier to read.</p>
 </section>
 </section>
@@ -546,7 +590,7 @@ And it should link to the correct URL</code></pre>
 <p>This test is a little different than our last. This time we have a “given”. Instead of creating a link ourselves, we’re going to assume one already exists. The reason behind this is simple. Walking through our application with Capybara is slow. We shouldn’t do it any more than we have to. We’ve already tested that we can submit a link, so we don’t need to test it again. Instead, we can create records directly in the database.</p>
 <p>We could go about creating records the way you’d expect:</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby">link = <span class="dt">Link</span>.create(title: <span class="st">&quot;Testing Rails&quot;</span>, url: <span class="st">&quot;http://testingrailsbook.com&quot;</span>)</code></pre>
-<p>This <em>would</em> work, but it has some serious downfalls when using it to test software. Imagine we have a large application, with hundreds of tests, each one having created a <code>Link</code> the manual way. If we were to add a required field to links, we would have to go through all of our tests and add the required field for <em>all</em> of these tests to get them to pass again. There are two widely used fixes for this painpoint. The first one is called fixtures.</p>
+<p>This <em>would</em> work, but it has some serious downfalls when using it to test software. Imagine we have a large application, with hundreds of tests, each one having created a <code>Link</code> the manual way. If we were to add a required field to links, we would have to go through all of our tests and add the required field for <em>all</em> of these tests to get them to pass again. There are two widely used fixes for this pain point. The first one is called fixtures.</p>
 <section id="fixtures" class="level4">
 <h4>Fixtures</h4>
 <p>Fixtures allow you to define sample data in YAML files that you can load and reuse through your tests. It might look something like this:</p>
@@ -625,10 +669,10 @@ link = create(<span class="st">:link</span>, title: <span class="st">&quot;TDD i
 <span class="kw">end</span></code></pre>
 <p>We require our <code>rails_helper</code> and create the standard feature and scenario blocks.</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby">link = create(<span class="st">:link</span>)</code></pre>
-<p>To setup our test, we create a link using FactoryGirl’s <code>.create</code> method, which instantiates a new <code>Link</code> object with our (currently non-existant) factory definition and persists it to the database.</p>
+<p>To setup our test, we create a link using FactoryGirl’s <code>.create</code> method, which instantiates a new <code>Link</code> object with our (currently non-existent) factory definition and persists it to the database.</p>
 <p><code>.create</code> is loaded into the global context in <code>spec/support/factory_girl.rb</code>:</p>
 <pre><code>config.include FactoryGirl::Syntax::Methods</code></pre>
-<p>While we’ll be calling <code>.create</code> in the global context to keep our code cleaner , you may see people calling it more explicitly: <code>FactoryGirl.create</code>. This is simply a matter of preference, and both are acceptable.</p>
+<p>While we’ll be calling <code>.create</code> in the global context to keep our code cleaner, you may see people calling it more explicitly: <code>FactoryGirl.create</code>. This is simply a matter of preference, and both are acceptable.</p>
 <p>Now, we’ll need to add a factory definition for our <code>Link</code> class in <code>spec/factories.rb</code>:</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/factories.rb</span>
 factory <span class="st">:link</span> <span class="kw">do</span>
@@ -709,7 +753,7 @@ expect(page).to have_link link.title, href: link.url</code></pre>
     expect(link.score).to eq <span class="dv">1</span>
   <span class="kw">end</span>
 <span class="kw">end</span></code></pre>
-<p>In this test, you’ll notice that we forego FactoryGirl and use plain ol’ ActiveRecord to instantiate our object. <code>#score</code> depends on <code>#upvotes</code> and <code>#downvotes</code>, which we can set without saving our object. Since we never have to save our object, we don’t need FactoryGirl to set up a valid record.</p>
+<p>In this test, you’ll notice that we forgo FactoryGirl and use plain ol’ ActiveRecord to instantiate our object. <code>#score</code> depends on <code>#upvotes</code> and <code>#downvotes</code>, which we can set without saving our object. Since we never have to save our object, we don’t need FactoryGirl to set up a valid record.</p>
 <p>With a failing test, we can write our implementation:</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/models/link.rb</span>
 <span class="kw">def</span> score
@@ -786,7 +830,7 @@ require <span class="st">&quot;rails_helper&quot;</span>
     })
   <span class="kw">end</span>
 <span class="kw">end</span></code></pre>
-<p>We name our request spec files after the paths they test. In this case requests to <code>/api/v1/links</code> will be tested in <code>spec/api/v1/links_spec.rb</code>.</p>
+<p>We name our request spec files after the paths they test. In this case requests to <code>/api/v1/links</code> will be tested in <code>spec/requests/api/v1/links_spec.rb</code>.</p>
 <p>After setting up our data, we make a <code>GET</code> request with the built-in <code>get</code> method. We then assert on the number of records returned in the JSON payload. Since all of our requests will be JSON, and we are likely to be parsing each of them, I’ve extracted a method <code>json_body</code> that parses the <code>response</code> object that is provided by <code>rack-test</code>.</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/support/api_helpers.rb</span>
 <span class="kw">module</span> <span class="dt">ApiHelpers</span>
@@ -864,7 +908,7 @@ require <span class="st">&quot;rails_helper&quot;</span>
     <span class="kw">end</span>
   <span class="kw">end</span>
 <span class="kw">end</span></code></pre>
-<p>In this spec, we build a link with an image URL, then <code>render</code> our partial with our link as a local variable. We then make a simple assertion that the image appears in the rendered html.</p>
+<p>In this spec, we build a link with an image URL, then <code>render</code> our partial with our link as a local variable. We then make a simple assertion that the image appears in the rendered HTML.</p>
 <p>When I initially implemented this partial, I had forgotten to also render the image on the link’s show page. Since some functionality I expected to see wasn’t implemented, I wrote a test to cover that case as well.</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/views/links/show.html.erb_spec.rb</span>
 require <span class="st">&quot;rails_helper&quot;</span>
@@ -957,7 +1001,7 @@ require <span class="st">&quot;rails_helper&quot;</span>
 <section id="testing-in-isolation" class="level2">
 <h2>Testing in isolation</h2>
 <p>In a previous chapter we discussed <strong>unit tests</strong>, tests that exercise a single component of a system in isolation. That’s nice in theory, but in the real world most objects depend on <strong>collaborators</strong> which may in turn depend on their own collaborators. You set out to test a single object and end up with a whole sub-system.</p>
-<p>Say we want to add the ability to calculate whether or not a link is controversial. We’re starting to have lot of score-related functionality so we extract it into its own <code>Score</code> object that takes in a <code>Link</code> in its constructor. <code>Score</code> implements the following: <code>#upvotes</code>, <code>#downvotes</code>, <code>#value</code>, and <code>#controversial?</code>.</p>
+<p>Say we want to add the ability to calculate whether or not a link is controversial. We’re starting to have a lot of score-related functionality so we extract it into its own <code>Score</code> object that takes in a <code>Link</code> in its constructor. <code>Score</code> implements the following: <code>#upvotes</code>, <code>#downvotes</code>, <code>#value</code>, and <code>#controversial?</code>.</p>
 <p>The spec looks like:</p>
 <pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/score_spec.rb</span>
 require <span class="st">&quot;rails_helper&quot;</span>
@@ -1072,9 +1116,152 @@ require <span class="st">&quot;rails_helper&quot;</span>
 <li><code>downvotes</code></li>
 </ul>
 </section>
-<section id="historical-note" class="level3">
-<h3>Historical note</h3>
-<p>Older versions of RSpec had methods named <code>stub</code> and <code>mock</code> as aliases to <code>double</code>. This is particularly confusing because <strong>mocking</strong> and <strong>stubbing</strong> are entirely different concepts (more on them later). To make things worse, RSpec also monkeypatched <code>Object</code> with an <code>Object.stub</code> method which <em>did</em> do real stubbing. You shouldn’t run into these unless you are working with a legacy test suite.</p>
+<section id="stubbing" class="level3">
+<h3>Stubbing</h3>
+<p><strong>Doubles</strong> make it easy for us to isolate collaborators that are passed into the object we are testing (the <strong>system under test</strong> or <strong>SUT</strong>). Sometimes however, we have to deal with collaborators that are hard-coded inside our object. We can isolate these objects too with a technique called <strong>stubbing</strong>.</p>
+<p>Stubbing allows us to tell collaborators to return a canned response when they receive a given message.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/controllers/links_controller_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">LinksController</span>, <span class="st">&quot;#create&quot;</span> <span class="kw">do</span>
+  context <span class="st">&quot;when the link is invalid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;re-renders the form&quot;</span> <span class="kw">do</span>
+      post <span class="st">:create</span>, link: attributes_for(<span class="st">:link</span>, <span class="st">:invalid</span>)
+
+      expect(response).to render_template <span class="st">:new</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>In this controller spec, we assert that the form should get re-rendered when given invalid data. However, validation is not done by the controller (the SUT in this case) but by a collaborator (<code>Link</code>). <em>This test could pass or fail unexpectedly if the link validations were updated even though no controller code has changed.</em></p>
+<p>We can use a combination RSpec’s stubs and test doubles to solve this problem.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/controllers/links_controller_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">LinksController</span>, <span class="st">&quot;#create&quot;</span> <span class="kw">do</span>
+  context <span class="st">&quot;when the link is invalid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;re-renders the form&quot;</span> <span class="kw">do</span>
+      invalid_link = double(save: <span class="dv">false</span>)
+      allow(<span class="dt">Link</span>).to receive(<span class="st">:new</span>).and_return(invalid_link)
+
+      post <span class="st">:create</span>, link: { attribute: <span class="st">&quot;value&quot;</span> }
+
+      expect(response).to render_template <span class="st">:new</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>We’ve already seen how to create a test double to pretend to be a collaborator that returns the responses we need for a scenario. In the case of this controller however, the link isn’t passed in as a parameter. Instead it is returned by another collaborator, the hard-coded class <code>Link</code>.</p>
+<p>RSpec’s <code>allow</code>, <code>to_receive</code>, and <code>and_return</code> methods allow us to target a collaborator, intercept messages sent to it, and return a canned response. In this case, whenever the controller asks <code>Link</code> for a new instance, it will return our test double instead.</p>
+<p>By isolating this controller spec, we can change the definition of what a “valid” link is all we want without impacting this test. The only way this test can fail now is if it does not re-render the form when <code>Link#save</code> returns <code>false</code>.</p>
+</section>
+<section id="testing-side-effects" class="level3">
+<h3>Testing Side Effects</h3>
+<p>So far, we’ve seen how to isolate ourselves from input from our collaborators. But what about methods with side-effects whose only behavior is to send a message to a collaborator? How do we test side-effects without having to test the whole subsystem?</p>
+<p>A common side-effect in a Rails application is sending email. Because we are trying to test the controller in isolation here, we don’t want to also have to test the mailer or the filesystem in this spec. Instead, we’d like to just test that we told the mailer to send the email at the appropriate time and trust that it will do its job correctly like proper object-oriented citizens.</p>
+<p>Say we send an email to moderators when a new link is added to the site:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># app/controllers/links_controller.rb</span>
+<span class="kw">class</span> <span class="dt">LinksController</span> &lt; <span class="dt">ApplicationController</span>
+  <span class="kw">def</span> index
+    <span class="ot">@links</span> = <span class="dt">Link</span>.hottest_first
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> show
+    <span class="ot">@link</span> = <span class="dt">Link</span>.find(params[<span class="st">:id</span>])
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> new
+    <span class="ot">@link</span> = <span class="dt">Link</span>.new
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> create
+    <span class="ot">@link</span> = <span class="dt">Link</span>.new(link_params)
+
+    <span class="kw">if</span> <span class="ot">@link</span>.save
+      <span class="dt">LinkMailer</span>.new_link(<span class="ot">@link</span>)
+      redirect_to link_path(<span class="ot">@link</span>)
+    <span class="kw">else</span>
+      render <span class="st">:new</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  <span class="kw">private</span>
+
+  <span class="kw">def</span> link_params
+    params.require(<span class="st">:link</span>).permit(<span class="st">:title</span>, <span class="st">:url</span>)
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>RSpec provides two ways of “listening” for and expecting on messages sent to collaborators. These are <strong>mocking</strong> and <strong>spying</strong>.</p>
+</section>
+<section id="mocking" class="level3">
+<h3>Mocking</h3>
+<p>When <strong>mocking</strong> an interaction with a collaborator we set up an expectation that it will receive a given message and then exercise the system to see if that does indeed happen.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/controllers/links_controller_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">LinksController</span>, <span class="st">&quot;#create&quot;</span> <span class="kw">do</span>
+  context <span class="st">&quot;when the link is invalid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;re-renders the form&quot;</span> <span class="kw">do</span>
+      invalid_link = double(save: <span class="dv">false</span>)
+      allow(<span class="dt">Link</span>).to receive(<span class="st">:new</span>).and_return(invalid_link)
+
+      post <span class="st">:create</span>, link: { attribute: <span class="st">&quot;value&quot;</span> }
+
+      expect(response).to render_template <span class="st">:new</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  context <span class="st">&quot;when the link is valid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;sends an email to the moderators&quot;</span> <span class="kw">do</span>
+      valid_link = double(save: <span class="dv">true</span>)
+      allow(<span class="dt">Link</span>).to receive(<span class="st">:new</span>).and_return(valid_link)
+
+      expect(<span class="dt">LinkMailer</span>).to receive(<span class="st">:new_link</span>).with(valid_link)
+
+      post <span class="st">:create</span>, link: { attribute: <span class="st">&quot;value&quot;</span> }
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+</section>
+<section id="spying" class="level3">
+<h3>Spying</h3>
+<p>Mocking can be a little weird because the expectation happens in the middle of the test, contrary to the <a href="#fourphasetest"><strong>four-phase test</strong></a> pattern discussed in an earlier section. <strong>Spying</strong> on the other hand does follow that approach.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/controllers/links_controller_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">LinksController</span>, <span class="st">&quot;#create&quot;</span> <span class="kw">do</span>
+  context <span class="st">&quot;when the link is invalid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;re-renders the form&quot;</span> <span class="kw">do</span>
+      invalid_link = double(save: <span class="dv">false</span>)
+      allow(<span class="dt">Link</span>).to receive(<span class="st">:new</span>).and_return(invalid_link)
+
+      post <span class="st">:create</span>, link: { attribute: <span class="st">&quot;value&quot;</span> }
+
+      expect(response).to render_template <span class="st">:new</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  context <span class="st">&quot;when the link is valid&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;sends an email to the moderators&quot;</span> <span class="kw">do</span>
+      valid_link = double(save: <span class="dv">true</span>)
+      allow(<span class="dt">Link</span>).to receive(<span class="st">:new</span>).and_return(valid_link)
+      allow(<span class="dt">LinkMailer</span>).to receive(<span class="st">:new_link</span>)
+
+      post <span class="st">:create</span>, link: { attribute: <span class="st">&quot;value&quot;</span> }
+
+      expect(<span class="dt">LinkMailer</span>).to have_received(<span class="st">:new_link</span>).with(valid_link)
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>Note that you can only spy on methods that have been stubbed or on test doubles (often referred to as <strong>spies</strong> in this context because they are often passed into an object just to record what messages are sent to it). If you try to spy on an unstubbed method, you will get a warning that looks like:</p>
+<blockquote>
+<p><code>&lt;LinkMailer (class)&gt;</code> expected to have received new_link, but that object is not a spy or method has not been stubbed.</p>
+</blockquote>
+</section>
+<section id="terminology" class="level3">
+<h3>Terminology</h3>
+<p>The testing community has a lot of overlapping nomenclature when it comes to the techniques for testing things in isolation. For example many refer to fake objects that stand in for collaborators (<strong>doubles</strong>) as <strong>mock objects</strong> or <strong>test stubs</strong> (not to be confused with <strong>mocking</strong> and <strong>stubbing</strong>).</p>
+<p>RSpec itself added to the confusion by providing <code>stub</code> and <code>mock</code> aliases for <code>double</code> in older versions (not to be confused with <strong>mocking</strong> and <strong>stubbing</strong>).</p>
+<p>Forcing a real collaborator to return a canned response to certain messages (<strong>stubbing</strong>) is sometimes referred to as a <strong>partial double</strong>.</p>
+<p>Finally, RSpec provides a <code>spy</code> method which creates a <strong>double</strong> that will respond to any method. Although often used when <strong>spying</strong>, these can be used anywhere you’d normally use a standard double and any double can be used when spying. They term <strong>spy</strong> can be a bit ambiguous as it can refer to both objects created via the <code>spy</code> method and objects used for spying.</p>
 </section>
 <section id="benefits" class="level3">
 <h3>Benefits</h3>
@@ -1082,9 +1269,640 @@ require <span class="st">&quot;rails_helper&quot;</span>
 <p>Using test doubles gets painful for components that are highly coupled to many collaborators. Let that pain drive you to reduce the coupling in your system. Remember the final step of the TDD cycle is <em>refactor</em>.</p>
 <p>Test doubles make the interfaces the SUT depends on explicit. Whereas the old spec said that the helper method relied on a <code>Link</code>, the new spec says that methods on <code>Score</code> depend on an object that must implement <code>#upvotes</code>, and <code>#downvotes</code>. This improves the unit tests as a source of documentation.</p>
 </section>
+<section id="dangers" class="level3">
+<h3>Dangers</h3>
+<p>One of the biggest benefits of testing in isolation is just that: the ability to test-drive the creation of an object without worrying about the implementation of its collaborators. In fact, you can build an object even if its collaborators don’t even exist yet.</p>
+<p>This advantage is also one of its pitfalls. It is possible to have a perfectly unit-tested system that has components that don’t line up with each other or even have some components missing altogether. The software is broken even though the test suite is green.</p>
+<p>This is why it is important to also have <strong>integration tests</strong> that test that the system as a whole works as expected. In a Rails application, these will usually be your feature specs.</p>
+<p>RSpec also provides some tools to help us combat this. <strong>Verifying doubles</strong> (created with the method <code>instance_double</code>) take a class as their first argument. When that class is not loaded, it acts like a regular double. However, when the class is loaded, it will raise an error if you try to call methods on the double that are not defined for instances of the class.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/models/score_spec.rb</span>
+require <span class="st">&quot;rails_helper&quot;</span>
+
+<span class="dt">RSpec</span>.describe <span class="dt">Score</span> <span class="kw">do</span>
+  describe <span class="st">&quot;#upvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the upvotes on the link&quot;</span> <span class="kw">do</span>
+      link = instance_double(<span class="dt">Link</span>, upvotes: <span class="dv">10</span>, downvotes: <span class="dv">0</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.upvotes).to eq <span class="dv">10</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#downvotes&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the downvotes on the link&quot;</span> <span class="kw">do</span>
+      link = instance_double(<span class="dt">Link</span>, upvotes: <span class="dv">0</span>, downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.downvotes).to eq <span class="dv">5</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#value&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is the difference between up and down votes&quot;</span> <span class="kw">do</span>
+      link = instance_double(<span class="dt">Link</span>, upvotes: <span class="dv">10</span>, downvotes: <span class="dv">3</span>)
+      score = <span class="dt">Score</span>.new(link)
+
+      expect(score.value).to eq <span class="dv">7</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  describe <span class="st">&quot;#controversial?&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;is true for posts where up/down votes are within 20% of each other&quot;</span> <span class="kw">do</span>
+      controversial_link = instance_double(<span class="dt">Link</span>, upvotes: <span class="dv">10</span>, downvotes: <span class="dv">9</span>)
+      score = <span class="dt">Score</span>.new(controversial_link)
+
+      expect(score).to be_controversial
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;is false for posts where up/down votes have &gt; 20% difference&quot;</span> <span class="kw">do</span>
+      non_controversial_link = instance_double(<span class="dt">Link</span>, upvotes: <span class="dv">10</span>, downvotes: <span class="dv">5</span>)
+      score = <span class="dt">Score</span>.new(non_controversial_link)
+
+      expect(score).not_to be_controversial
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>Here we convert the score spec to use verifying doubles. Now if we try to make our doubles respond to methods that <code>Link</code> does not respond to (such as <code>total_upvotes</code>), we get the following error:</p>
+<blockquote>
+<p>Failure/Error: <code>link = instance_double(Link, total_upvotes: 10, downvotes: 0)</code> Link does not implement: <code>total_upvotes</code></p>
+</blockquote>
+</section>
+<section id="brittleness" class="level3">
+<h3>Brittleness</h3>
+<p>One of the key ideas behind testing code is that you should test <em>what</em> your code does, not <em>how</em> it is done. The various techniques for testing in isolation bend that rule. The tests are more closely coupled to which collaborators an object uses and the names of the messages the SUT will send to those collaborators.</p>
+<p>This can make the tests more <strong>brittle</strong>, more likely to break if the implementation changes. For example, if we changed the <code>LinksController</code> to use <code>save!</code> instead of <code>save</code>, we would now have to update the double or stubbed method in the tests.</p>
+</section>
 <section id="a-pragmatic-approach-1" class="level3">
 <h3>A pragmatic approach</h3>
 <p>Sometimes you need to test a component that is really tightly coupled with another. When this is framework code it is often better just to back up a bit and test the two components together. For example models that inherit from <code>ActiveRecord::Base</code> are coupled to ActiveRecord’s database code. Trying to isolate the model from the database can get really painful and there’s nothing you can do about it because you don’t own the ActiveRecord code.</p>
+</section>
+</section>
+<section id="external-services" class="level2">
+<h2>External services</h2>
+<p>Rails apps commonly interact with external services and APIs. In general we try to avoid testing these because we don’t own that code and the network is unreliable. This means that the test suite could fail if the external service or the internet connection was down even if our code is fine. In addition, it’s just plain <a href="#slowtests"><em>slow</em></a>. So how do we get around this? There are a few approaches:</p>
+<section id="adapter-pattern" class="level3">
+<h3>Adapter pattern</h3>
+<p>It’s generally a best practice to encapsulate external interactions in an <strong>adapter class</strong>. Your tests can stub this adapter instead of making the network request.</p>
+<p>An adapter for Twitter might look like:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">TwitterAdapter</span>
+  <span class="kw">def</span> <span class="dv">self</span>.tweet(message)
+    new(<span class="dt">ENV</span>.fetch(<span class="st">&quot;TWITTER_API_KEY&quot;</span>), <span class="dt">ENV</span>.fetch(<span class="st">&quot;TWITTER_SECRET_TOKEN&quot;</span>)).
+      tweet(message)
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> initialize(api_key, secret_token)
+    <span class="ot">@client</span> = <span class="dt">Twitter</span>::<span class="dt">REST</span>::<span class="dt">Client</span>.new <span class="kw">do</span> |config|
+      config.access_token = api_key
+      config.access_token_secret = secret_token
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> tweet(message)
+    <span class="ot">@client</span>.update(message)
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>It might be used in a controller like:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">LevelCompletionsController</span> &lt; <span class="dt">ApplicationController</span>
+  <span class="kw">def</span> create
+    <span class="co"># other things</span>
+
+    <span class="dt">TwitterAdapter</span>.tweet(<span class="dt">I18n</span>.t(<span class="st">&quot;.success&quot;</span>))
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>By wrapping up the Twitter code in an adapter, not only have we made it easier to test but we’ve also encapsulated our dependency on the twitter gem as well as the configuration of the environment variables.</p>
+<p>We can stub the adapter in specs:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="st">&quot;complete level&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;posts to twitter&quot;</span> <span class="kw">do</span>
+    allow(<span class="dt">TwitterAdapter</span>).to receive(<span class="st">:tweet</span>).and_return(<span class="dv">true</span>)
+
+    <span class="co"># do some things</span>
+
+    expect(<span class="dt">TwitterAdapter</span>).to have_received(<span class="st">:tweet</span>).with(<span class="dt">I18n</span>.t(<span class="st">&quot;.success&quot;</span>))
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p><em>Note that when testing the <code>TwitterAdapter</code> itself, you shouldn’t stub it as stubbing the system under test is an anti-pattern.</em></p>
+</section>
+<section id="injecting-an-adapter" class="level3">
+<h3>Injecting an adapter</h3>
+<p>In integration tests though, we try to avoid stubbing so as to test the entire system. Sometimes, it makes sense to inject a fake adapter for the purpose of testing. For example:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">module</span> <span class="dt">FakeSMS</span>
+  <span class="dt">Message</span> = <span class="dt">Struct</span>.new(<span class="st">:to</span>, <span class="st">:from</span>, <span class="st">:body</span>)
+
+  <span class="kw">class</span> <span class="dt">Client</span>
+    <span class="co"># this allows us to &quot;read&quot; messages later on</span>
+    <span class="kw">def</span> <span class="dv">self</span>.messages
+      <span class="ot">@messages</span> ||= []
+    <span class="kw">end</span>
+
+    <span class="kw">def</span> send_message(to:, from:, body:)
+      <span class="dv">self</span>.class.messages &lt;&lt; <span class="dt">Message</span>.new(to, from, body)
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>We can then inject it into our adapter class when running specs.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/rails_helper.rb</span>
+
+<span class="dt">SMSClient</span>.client = <span class="dt">FakeSMS</span>::<span class="dt">Client</span></code></pre>
+<p>This allows us to write feature specs that look like this:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">feature <span class="st">&quot;signing in&quot;</span> <span class="kw">do</span>
+  scenario <span class="st">&quot;with two factors&quot;</span> <span class="kw">do</span>
+    user = create(<span class="st">:user</span>, password: <span class="st">&quot;password&quot;</span>, email: <span class="st">&quot;user@example.com&quot;</span>)
+
+    visit root_path
+    click_on <span class="st">&quot;Sign In&quot;</span>
+
+    fill_in <span class="st">:email</span>, with: <span class="st">&quot;user@example.com&quot;</span>
+    fill_in <span class="st">:password</span>, with: <span class="st">&quot;password&quot;</span>
+    click_on <span class="st">&quot;Submit&quot;</span>
+
+    last_message = <span class="dt">FakeSMS</span>.messages.last
+    fill_in <span class="st">:code</span>, with: last_message.body
+    click_on <span class="st">&quot;Submit&quot;</span>
+
+    expect(page).to have_content(<span class="st">&quot;Sign out&quot;</span>)
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>This approach is explored in more detail in this blog post on <a href="https://robots.thoughtbot.com/testing-sms-interactions">testing SMS interactions</a>.</p>
+</section>
+<section id="spying-on-external-libraries" class="level3">
+<h3>Spying on external libraries</h3>
+<p>This approach is similar to that described above. However, instead of stubbing and spying on adapter classes, you do so on external libraries since you don’t own that code. This could be a third-party wrapper around an API (such as the Twitter gem) or a networking library like HTTParty. So, for example, a test might look like this, where <code>Twitter:Rest:Client</code> is an external dependency:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="st">&quot;complete level&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;posts to twitter&quot;</span> <span class="kw">do</span>
+    twitter = spy(<span class="st">:twitter</span>)
+    allow(<span class="dt">Twitter</span>::<span class="dt">Rest</span>::<span class="dt">Client</span>).to receive(<span class="st">:new</span>).and_return(twitter)
+
+    <span class="co"># do some things</span>
+
+    expect(twitter).to have_received(<span class="st">:update</span>).with(<span class="dt">I18n</span>.t(<span class="st">&quot;.success&quot;</span>))
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>So when do you stub a library directly rather than the adapter? The library is an implementation of the adapter and should be encapsulated by it. Any time you need to exercise the adapter itself (such as in the adapter’s unit tests) you can stub the external library. If the adapter is simply a collaborator of the SUT, then you should stub the adapter instead.</p>
+</section>
+<section id="webmock" class="level3">
+<h3>Webmock</h3>
+<p><a href="https://github.com/bblimke/webmock">Webmock</a> is a gem that allows us to intercept HTTP requests and returns a canned response. It also allows you to assert that HTTP requests were made with certain parameters. This is just like stubbing and mocking we’ve looked earlier, but instead of applying it to an object, we apply it to a whole HTTP request.</p>
+<p>Because we are now stubbing the HTTP request itself, we can test out adapters and how they would respond to various responses such as server or validation errors.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="dt">QuoteOfTheDay</span>, <span class="st">&quot;#fetch&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;fetches a quote via the API&quot;</span> <span class="kw">do</span>
+    quote_text = <span class="st">&quot;Victorious warriors win first and then go to war, while defeated warriors go to war first and then seek to win.&quot;</span>
+
+    stub_request(<span class="st">:get</span>, <span class="st">&quot;api.quotes.com/today&quot;</span>).
+      with({ author: <span class="st">&quot;Sun Tzu&quot;</span>, quote: quote_text }.to_json)
+
+    quote = <span class="dt">QuoteOfTheDay</span>.fetch
+
+    expect(quote.author).to eq <span class="st">&quot;Sun Tzu&quot;</span>
+    expect(quote.text).to eq quote_text
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+</section>
+<section id="blocking-all-requests" class="level3">
+<h3>Blocking all requests</h3>
+<p>Webmock can be configured to block all external web requests. It will raise an error telling you where that request was made from. This helps enforce a “no external requests in specs” policy. To do so, add the following line to your <code>rails_helper.rb</code> file:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="dt">WebMock</span>.disable_net_connect!(<span class="st">:allow_localhost</span> =&gt; <span class="dv">true</span>)</code></pre>
+<p><em>This is a best practice and should be enabled on most applications.</em></p>
+</section>
+<section id="vcr" class="level3">
+<h3>VCR</h3>
+<p><a href title="https://github.com/vcr/vcr">VCR</a> is a gem that allows us to record an app’s HTTP requests and then replay them in future test runs. It saves the responses in a fixtures file and then serves it up instead of a real response the next time you make a request. This means you don’t have to manually define the response payloads and allows easy replication of the actual production API’s responses. These fixtures can get stale so it’s generally a good idea to expire them every now and then.</p>
+</section>
+<section id="fakes" class="level3">
+<h3>Fakes</h3>
+<p><strong>Fakes</strong> are little applications that you can boot during your test that will mimic a real service. These give you the ability return dynamic responses because they actually run code. We commonly write these as Sinatra apps and then use Webmock or <a href title="https://github.com/thoughtbot/capybara_discoball">capybara-discoball</a> load it up the app in tests. These fakes are often packaged as gems and many popular services have open source test fakes written by the community.</p>
+<p>A fake for Stripe (payment processor) might look like:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">FakeStripe</span> &lt; <span class="dt">Sinatra</span>::<span class="dt">Base</span>
+  post <span class="st">&quot;/v1/customers/:customer_id/subscriptions&quot;</span> <span class="kw">do</span>
+    content_type <span class="st">:json</span>
+    customer_subscription.merge(
+      id: params[<span class="st">:id</span>],
+      customer: params[<span class="st">:customer_id</span>]
+    ).to_json
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> customer_subscription
+    <span class="co"># default subscription params</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>We can use capybara-discoball to boot the fake app in our tests:</p>
+<pre><code># spec/rails_helper.rb
+
+Capybara::Discoball.spin(FakeStripe) do |server|
+  url = &quot;http://#{server.host}:#{server.port}&quot;
+  Stripe.api_base = url
+end</code></pre>
+<p><code>Capybara::Discoball</code> boots up a local server at a url like <code>127.0.0.1:4567</code>. We set the <code>api_base</code> attribute on the <code>Stripe</code> class to point to our local server instead of the real production Stripe servers. Our app will make real HTTP requests to the local server running our fake, exercising all of our application’s code including the HTTP request handling. This approach is the closest to the real world we can get without hitting the real service.</p>
+<p>Fakes are particularly convenient when dealing with complex interactions such as payments.</p>
+<p>These fakes can be re-used beyond the test environment in <a href title="https://robots.thoughtbot.com/faking-apis-in-development-and-staging">both development and staging</a>.</p>
+</section>
+<section id="the-best-approach" class="level3">
+<h3>The best approach?</h3>
+<p>There is no single best approach to handling external services. At the unit level, stubbing adapters or using Webmock is our approach of choice. At the integration level, fakes are quite pleasant to work with although we’ll still use Webmock for one-off requests. I’ve found VCR to be rather brittle and more difficult to work with. As the most automated of all the options, you trade control for convenience.</p>
+<p>With all these approaches, the external API can change out from under you without your tests breaking because they are explicitly <em>not</em> hitting the real API. The only way to catch this is by running the app against the real API, either via the test suite (slow and unreliable), in CI, or manually in a staging environment.</p>
+</section>
+</section>
+</section>
+<section id="antipatterns" class="level1">
+<h1>Antipatterns</h1>
+<section id="slow-tests" class="level2">
+<h2>Slow tests</h2>
+<p>As applications grow, test suites naturally and necessarily get slower. The longer the test suite, the less you will run it. The more often you can run your tests, the more valuable they are because you can catch bugs faster than you otherwise would have. As a baseline, after every line of code that I write, I try to run its respective test. I always run my entire test suite before submitting pull requests and after rebasing. As you can imagine, this leads to running your tests frequently. If it’s a chore to run your tests you aren’t going to run them, and they quickly become out of date. At that point, you may as well not have written them in the first place.</p>
+<p>While continuous integration is a good tool to double check that your suite passes in a public way, it should not be the <em>only</em> place that the entire suite is run. If you have to wait to see if your tests pass on CI, this will seriously slow down the development of new features.</p>
+<p>Here are some things to think about when trying to write a fast test suite:</p>
+<section id="use-profiling-to-find-the-slowest-tests" class="level3">
+<h3>Use profiling to find the slowest tests</h3>
+<p>The easiest way to find the worst offenders is to profile your suite. Running <code>rspec</code> with the <code>--profile</code> flag will output the 10 slowest tests (<code>--profile 4</code> will output the 4 slowest). You can add this flag to your <code>.rspec</code> file to output with every run.</p>
+</section>
+<section id="have-a-fast-spec-helper" class="level3">
+<h3>Have a fast spec helper</h3>
+<p>When you repeatedly run individual tests and test files, you may notice that a majority of the time running the tests isn’t spent running the test itself, but is actually spent loading your application’s dependencies. One of the main culprits here is Rails. With a large application, loading your entire application can take seconds, and that’s a long time to wait if you want to run your tests after every line of code you change.</p>
+<p>The nice thing is, some of the tests you write won’t depend on Rails at all. Depending on how you architect your code, this could be a lot of tests. We favor writing a lot of small objects called POROs, or Plain Old Ruby Objects (objects that aren’t backed by ActiveRecord). Since these objects don’t depend on Rails, we can avoid loading it when running just these tests.</p>
+<p>For this reason, rspec-rails 3.0 introduced multiple default spec helpers. When you initialize a Rails app with RSpec, it creates a <code>rails_helper.rb</code> which loads Rails and a <code>spec_helper.rb</code> which doesn’t. When you don’t need Rails, or any of its dependencies, require your <code>spec_helper.rb</code> for a modest time savings.</p>
+</section>
+<section id="use-an-application-preloader" class="level3">
+<h3>Use an application preloader</h3>
+<p>Rails 4.1 introduced another default feature that reduces some of the time it takes to load Rails. The feature is bundled in a gem called <a href="https://github.com/rails/spring">Spring</a>, and classifies itself as an application preloader. An application preloader automatically keeps your application running in the background so that you don’t have to load it repeatedly for various different tasks or test runs. Spring is available for many tasks by default, such as rake tasks, migrations, and TestUnit tests.</p>
+<p>To use spring, you can prefix these commands with the <code>spring</code> command, e.g. <code>spring rake db:migrate</code>. The first time you run the command, Spring will start your application. Subsequent uses of Spring will have already booted your application, so you should see some time savings. You can avoid having to type the <code>spring</code> command prefix by installing the Spring binstubs:</p>
+<pre><code>bundle exec spring binstub --all</code></pre>
+<p>To use spring with RSpec, you’ll have to install the <a href="https://github.com/jonleighton/spring-commands-rspec">spring-commands-rspec</a> gem and run <code>bundle exec spring binstub rspec</code>.</p>
+<p>If you are on older versions of Rails, you can manually add <code>spring</code> to your Gemfile, or use other application preloaders such as <a href="https://github.com/burke/zeus">Zeus</a>.</p>
+</section>
+<section id="only-persist-what-is-necessary" class="level3">
+<h3>Only persist what is necessary</h3>
+<p>One of the most common causes of slow tests is excessive database interaction. Persisting to the database takes far longer than initializing objects in memory, and while we’re talking fractions of a second, each of these round trips to the database adds up when running your entire suite.</p>
+<p>When you initialize new objects, try to do so with the least overhead. Depending on what you need, you should choose your initialization method in this order:</p>
+<ul>
+<li><code>Object.new</code> - initializes the object without FactoryGirl. Use this when you don’t care about any validations or default values.</li>
+<li><code>FactoryGirl.build_stubbed(:object)</code> - initializes the object with FactoryGirl, setting up default values and associates records using the <code>build_stubbed</code> method. Nothing is persisted to the database.</li>
+<li><code>FactoryGirl.build(:object)</code> - initializes the object with FactoryGirl, setting up default values and persisting associated records with <code>create</code>.</li>
+<li><code>FactoryGirl.create(:object)</code> - initializes and persists the object with FactoryGirl, setting up default values and persisting associated records with <code>create</code>.</li>
+</ul>
+<p>Another thing to look out for is factory definitions with more associations than are necessary for a valid model. We talk about this more in <a href="#using-factories-like-fixtures">Using Factories Like Fixtures</a>.</p>
+</section>
+<section id="move-sad-paths-out-of-feature-specs" class="level3">
+<h3>Move sad paths out of feature specs</h3>
+<p>Feature specs are slow. They have to boot up a fake browser and navigate around. They’re particularly slow when using a JavaScript driver which incurs even more overhead. While you do want an feature spec to cover every user facing feature of your application, you also don’t want to duplicate coverage.</p>
+<p>Many times, feature specs are written to cover both <em>happy paths</em> and <em>sad paths</em>. In an attempt to mitigate duplicate code coverage with slower tests, we’ll often write our happy path tests with feature specs, and sad paths with some other medium, such as request specs or view specs. Finding a balance between too many and too few feature specs comes with experience.</p>
+</section>
+<section id="dont-hit-external-apis" class="level3">
+<h3>Don’t hit external APIs</h3>
+<p>External APIs are slow and unreliable. Furthermore, you can’t access them without an internet connection and many APIs have rate limits. To avoid all these problems, you should <em>not</em> be hitting external APIs in the test environment. For most APIs you should be writing fakes or stubbing them out. At the very least, you can use the <a href="https://github.com/vcr/vcr">VCR</a> gem to cache your test’s HTTP requests. If you use VCR, be sure to auto-expire the tests once every one or two weeks to ensure the API doesn’t change out from under you.</p>
+<p>If you want to be extra certain that you are testing against the real API, you can configure your test suite to hit the API on CI only.</p>
+</section>
+<section id="delete-tests" class="level3">
+<h3>Delete tests</h3>
+<p>Sometimes, a test isn’t worth it. There are always tradeoffs, and if you have a particularly slow test that is testing a non-mission critical feature, or a feature that is unlikely to break, maybe it’s time to throw the test out if it prevents you from running the suite.</p>
+</section>
+</section>
+<section id="intermittent-failures" class="level2">
+<h2>Intermittent Failures</h2>
+<p>Intermittent test failures are one of the hardest kinds of bug to find. Before you can fix a bug, you need to know why it is happening, and if the bug manifests itself at seemingly random intervals, this can be especially difficult. Intermittent failures can happen for a lot of reasons, typically due to time or from tests affecting other tests.</p>
+<p>We usually advise running your tests in a random order. The goal of this is to make it easy to tell when tests are being impacted by other tests. If your tests <em>aren’t</em> cleaning up after themselves, then they may cause failures in other tests, intermittently depending on the order the tests happen to be run in. When this happens, the best way to start diagnosing is to rerun the tests using the <code>seed</code> of the failing test run.</p>
+<p>You may have noticed that your tests output something like <code>Randomized with seed 30205</code> at the end of each test run. You can use that seed to rerun the tests in the same “randomized” order: <code>rspec --seed 30205</code>. If you want to narrow down the number of examples that are run, you can use <a href="https://relishapp.com/rspec/rspec-core/v/3-3/docs/command-line/bisect">RSpec bisect</a> ( <code>rspec --seed 30205 --bisect</code>), which runs the tests in different combinations to hone in on the one that is causing problems.</p>
+<p>Here are some likely candidates to look for when trying to diagnose intermittent failures:</p>
+<section id="database-contamination" class="level3">
+<h3>Database contamination</h3>
+<p>Database contamination occurs when writes to the database are not cleaned up after a single test is run. When the subsequent test is run, the effects of the first test can cause unexpected output. RSpec has transactional fixtures turned on by default, meaning it runs each test within a transaction, rolling that transaction back at the end of the test.</p>
+<p>The problem is, tests run with the JavaScript driver are run in a separate thread which doesn’t share a connection to the database. This means that the test has to commit the changes to the database. In order to return to the original state, you have to truncate the database, essentially deleting all records and resetting all indexes. The one downside of this, is that it’s a bit slower than transactions.</p>
+<p>As we’ve mentioned previously, we use Database Cleaner to automatically use transaction or truncation to reset our database depending on which strategy is necessary.</p>
+</section>
+<section id="global-state" class="level3">
+<h3>Global state</h3>
+<p>Whenever you modify global state, be sure to reset it to the original state after the test is run, <em>even if the test raises an error</em>. If the state is never reset, the modified value can leak into the following tests in the test run. Here’s a common helper file I’ll use to set <code>ENV</code> variables in my tests:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># spec/support/env_helper.rb</span>
+
+<span class="kw">module</span> <span class="dt">EnvHelper</span>
+  <span class="kw">def</span> with_env(variable, value)
+    old_value = <span class="dt">ENV</span>[variable]
+    <span class="dt">ENV</span>[variable] = value
+    <span class="kw">yield</span>
+  <span class="kw">ensure</span>
+    <span class="dt">ENV</span>[variable] = old_value
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="dt">RSpec</span>.configure <span class="kw">do</span> |config|
+  config.include <span class="dt">EnvHelper</span>
+<span class="kw">end</span></code></pre>
+<p>You can use this in a test, like so:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">require <span class="st">&quot;spec_helper&quot;</span>
+
+feature <span class="st">&quot;User views the form setup page&quot;</span>, <span class="st">:js</span> <span class="kw">do</span>
+  scenario <span class="st">&quot;after creating a submission, they see the continue button&quot;</span> <span class="kw">do</span>
+    with_env(<span class="st">&quot;POLLING_INTERVAL&quot;</span>, <span class="st">&quot;1&quot;</span>) <span class="kw">do</span>
+      form = create(<span class="st">:form</span>)
+
+      visit setup_form_path(form, as: form.user)
+
+      expect(page).not_to have_css <span class="st">&quot;[data-role=continue]&quot;</span>
+
+      submission = create(<span class="st">:submission</span>, form: form)
+
+      expect(page).to have_css <span class="st">&quot;[data-role=continue]&quot;</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>You could also use <a href="https://github.com/thoughtbot/climate_control">Climate Control</a>, a pre-baked solution that works in a similar fashion.</p>
+</section>
+<section id="time" class="level3">
+<h3>Time</h3>
+<p>Time and time zones can be tricky. Sometimes microseconds can be the difference between a passing and failing test, and if you’ve ever run your tests from different time zones you may have seen failures on assertions about the current day.</p>
+<p>The best way to ensure that the time is what you think it is, is to stub it out with a known value. Rails 4.1 introduced the <code>travel_to</code> helper, which allows you to stub the time within a block:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">it <span class="st">&quot;sets submitted at to the current time&quot;</span> <span class="kw">do</span>
+  form = <span class="dt">Form</span>.new
+
+  travel_to <span class="dt">Time</span>.now <span class="kw">do</span>
+    form.submit
+    expect(form.reload.submitted_at).to eq <span class="dt">Time</span>.now
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>If you are on older versions of Rails, you can use <a href="https://github.com/travisjeffery/timecop">timecop</a> to control time.</p>
+</section>
+</section>
+<section id="brittle-tests" class="level2">
+<h2>Brittle Tests</h2>
+<p>When it becomes difficult to make trivial changes to your code without breaking tests, your test suite can become a burden. Brittle code comes from coupling. The more coupled your code, the harder it is to make changes without having to update multiple locations in your code. We want to write test suites that fully cover all functionality of our application while still being resilient to change.</p>
+<p>We’ve learned how <a href="#brittleness">stubbing and mocking can lead to brittle tests</a>. Here’s another example of coupling and some tips to fix it:</p>
+<section id="coupling-to-copy-and-the-dom" class="level3">
+<h3>Coupling to copy and the DOM</h3>
+<p>An easy way to create brittle tests is to hard code copy and DOM attributes into your tests. These should be easy to change by yourself, designers, and anyone else on the team without breaking any tests. Most often, the important thing that you want to test is that a representation of a certain piece of text or element is appearing in the right spot at the right time. The actual words and elements themselves are unimportant.</p>
+<p>Consider the following:</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;welcome-message&quot;</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;p&gt;</span>Welcome, #{current_user.name}<span class="kw">&lt;/p&gt;</span>
+<span class="kw">&lt;/div&gt;</span></code></pre>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">expect(page).to have_content <span class="st">&quot;Welcome, </span><span class="ot">#{</span>user.name<span class="ot">}</span><span class="st">&quot;</span></code></pre>
+<p>Now, imagine later on that the text in the template needs to change from <code>Welcome, #{user.name}</code> to <code>Hello again, #{user.name}!</code>. We’d now have to change this text in two places, and if we had it in more tests we’d have to change it in each one. Let’s look at some ways to decouple our tests from our copy.</p>
+<section id="internationalization" class="level4">
+<h4>Internationalization</h4>
+<p>Our preferred way to decouple your copy from your tests is to use internationalization (i18n), which is primarily used to support your app in multiple languages. i18n works by extracting all the copy in your application to YAML files, which have keys mapping to your copy. In your application, you reference these keys, which then output the correct text depending on the user’s language.</p>
+<p>Using i18n can be costly if you <em>never</em> end up supporting multiple languages, but if you do end up needing to internationalize your app, it is much easier to do it from the start. The benefit of doing this up front, is that you don’t have to go back and find and replace every line of copy throughout your app, which grows in difficulty with the size of your app.</p>
+<p>The second benefit of i18n, and why it matters to us here, is that i18n does the hard work of decoupling our application from specific copy. We can use the keys in our tests without worrying about the exact text changing out from under us. With i18n, our tests would look like this:</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;welcome-message&quot;</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;p&gt;</span><span class="er">&lt;</span>%= t(&quot;dashboards.show.welcome&quot;, user: current_user) %&gt;<span class="kw">&lt;/p&gt;</span>
+<span class="kw">&lt;/div&gt;</span></code></pre>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">expect(page).to have_content t(<span class="st">&quot;dashboards.show.welcome&quot;</span>, user: user)</code></pre>
+<p>A change in our copy would go directly into our YAML file, and we wouldn’t have to change a thing in any of our templates or tests.</p>
+</section>
+<section id="data-attributes" class="level4">
+<h4>Data Attributes</h4>
+<p>If you have an existing app that has not been internationalized, an easier way to decouple your tests from copy or DOM elements is to use data attributes. You can add data attributes to any HTML tag and then assert on it’s presence in your tests. Here’s an example:</p>
+<pre class="sourceCode html"><code class="sourceCode html"><span class="kw">&lt;div</span><span class="ot"> class=</span><span class="st">&quot;warning&quot;</span><span class="ot"> data-role=</span><span class="st">&quot;warning&quot;</span><span class="kw">&gt;</span>
+  <span class="kw">&lt;p&gt;</span>This is a warning<span class="kw">&lt;/p&gt;</span>
+<span class="kw">&lt;/div&gt;</span></code></pre>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">expect(page).to have_css <span class="st">&quot;[data-role=warning]&quot;</span></code></pre>
+<p>It’s important to note that we aren’t using <code>have_css</code> to assert on the CSS class or HTML tag either. Classes and tags are DOM elements with high churn and are often changed by designers who may not be as proficient with Ruby or tests. By using a separate <code>data-role</code>, and teaching designers their purpose, they can change the markup as much as they want (as long as they keep the <code>data-role</code>) without breaking our tests.</p>
+</section>
+<section id="extract-objects-and-methods" class="level4">
+<h4>Extract objects and methods</h4>
+<p>As with most things in object-oriented programming, the best way to reduce duplication and minimize coupling is to extract a method or class that can be reused. That way, if something changes you only have to change it in a single place. We’ll usually start by extracting common functionality to a method. If the functionality is more complex we’ll then consider extracting a page object.</p>
+</section>
+</section>
+</section>
+<section id="testing-implementation-details" class="level2">
+<h2>Testing Implementation Details</h2>
+<p>One metric of a solid test suite is that you shouldn’t have to modify your tests when refactoring production code. If your tests know too much about the implementation of your code, your production and test code will be highly coupled, and even minor changes in your production code will require reciprocal changes in the test suite. When you find yourself refactoring your test suite alongside a refactoring of your production code, it’s likely you’ve tested too many implementation details of your code. At this point, your tests have begun to slow rather than assist in refactoring.</p>
+<p>The solution to this problem is to favor testing behavior over implementation. You should test <em>what</em> your code does, not <em>how</em> it does it. Let’s use some code as an example:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">Numeric</span>
+  <span class="kw">def</span> negative?
+    <span class="dv">self</span> &lt; <span class="dv">0</span>
+  <span class="kw">end</span>
+<span class="kw">end</span>
+
+<span class="kw">def</span> absolute_value(number)
+  <span class="kw">if</span> number.negative?
+    -number
+  <span class="kw">else</span>
+    number
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>The following is a <em>bad</em> test (not to mention, it doesn’t fully test the method):</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="co"># this is bad</span>
+
+describe <span class="st">&quot;#absolute_value&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;checks if the number is negative&quot;</span> <span class="kw">do</span>
+    number = <span class="dv">5</span>
+    allow(number).to receive(<span class="st">:negative?</span>)
+
+    absolute_value(number)
+
+    expect(number).to have_received(<span class="st">:negative?</span>)
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>The above code tests an implementation detail. If we later removed our implementation of <code>Numeric#negative?</code> we’d have to change both our production code <em>and</em> our test code.</p>
+<p>A better test would look like this:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="st">&quot;#absolute_value&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;returns the number's distance from zero&quot;</span> <span class="kw">do</span>
+    expect(absolute_value(<span class="dv">4</span>)).to eq <span class="dv">4</span>
+    expect(absolute_value(<span class="dv">0</span>)).to eq <span class="dv">0</span>
+    expect(absolute_value(-<span class="dv">2</span>)).to eq <span class="dv">2</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>The above code tests the interface of <code>#absolute_value</code>. By testing just the inputs and outputs, we can freely change the implementation of the method without having to change our test case. The nice thing is that if we are following TDD, our tests will naturally follow this guideline, since TDD encourages us to write tests for the behavior we expect to see.</p>
+<section id="gotcha" class="level3">
+<h3>Gotcha</h3>
+<p>It is occasionally true that testing behavior and testing implementation will be one and the same. A common case for this is when testing methods that must delegate to other methods. For example, many service objects will queue up a background job. Queuing that job is a crucial behavior of the service object, so it may be necessary to stub the job and assert it was called:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="st">&quot;Notifier#notify&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;queues a NotifierJob&quot;</span> <span class="kw">do</span>
+    allow(<span class="dt">NotifierJob</span>).to receive(<span class="st">:notify</span>)
+
+    <span class="dt">Notifier</span>.notify(<span class="st">&quot;message&quot;</span>)
+
+    expect(<span class="dt">NotifierJob</span>).to have_received(<span class="st">:notify</span>).with(<span class="st">&quot;message&quot;</span>)
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+</section>
+<section id="private-methods" class="level3">
+<h3>Private Methods</h3>
+<p>As you may have guessed, private methods are an implementation detail. We say it’s an implementation detail, because the consumer of the class will rely on the public interface, but shouldn’t care what is happening behind the scenes. When you encapsulate code into a private method, the code is not part of the class’s public interface. You should be able to change how the code works (but not what it does) without disrupting anything that depends on the class.</p>
+<p>The benefit of being able to refactor code freely is a huge boon, as long as you know that the behavior of your class is well tested. While you shouldn’t test your private methods directly, they can and should be tested indirectly by exercising the code from public methods. This allows you to change the internals of your code down the road without having to change your tests.</p>
+<p>If you feel that the logic in your private methods is necessary to test independently, that may be a hint that the functionality can be encapsulated in its own class. At that point, you can extract a new class to test. This has the added benefit of improved reusability and readability.</p>
+</section>
+</section>
+<section id="let-subject-and-before" class="level2">
+<h2>Let, Subject, and Before</h2>
+<p>RSpec has a few features that we have not yet mentioned, because we find that they make test suites difficult to maintain. The main offenders are <code>let</code>, <code>let!</code>, <code>subject</code>, and <code>before</code>. They share similar problems, so this section will use <code>let</code> and <code>let!</code> as examples. <code>let</code> allows you to declare a fixture that will be automatically defined in all other tests in the same context of the <code>let</code>.</p>
+<p><code>let</code> works by passing it a symbol and a block. You are then provided a method with the same name as the symbol you passed to <code>let</code> in your test. When you call it, RSpec will evaluate and memoize the respective block. Since the block is not run until you call the method, we say that it is lazy-evaluated. <code>let!</code> on the other hand, will define a method that runs the code in the given block, but it will always be invoked one time before each test is run.</p>
+<p>Here’s an example taken from <a href="https://github.com/thoughtbot/hound">Hound</a>:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="dt">RepoActivator</span>, <span class="st">&quot;#deactivate&quot;</span> <span class="kw">do</span>
+  let(<span class="st">:repo</span>) {
+    create(<span class="st">:repo</span>)
+  }
+
+  let(<span class="st">:activator</span>) {
+    allow(<span class="dt">RemoveHoundFromRepo</span>).to receive(<span class="st">:run</span>)
+    allow(<span class="dt">AddHoundToRepo</span>).to receive(<span class="st">:run</span>).and_return(<span class="dv">true</span>)
+
+    <span class="dt">RepoActivator</span>.new(github_token: <span class="st">&quot;githubtoken&quot;</span>, repo: repo)
+  }
+
+  let!(<span class="st">:github_api</span>) {
+    hook = double(<span class="st">:hook</span>, id: <span class="dv">1</span>)
+    api = double(<span class="st">:github_api</span>, remove_hook: <span class="dv">true</span>)
+    allow(api).to receive(<span class="st">:create_hook</span>).and_yield(hook)
+    allow(<span class="dt">GithubApi</span>).to receive(<span class="st">:new</span>).and_return(api)
+    api
+  }
+
+  context <span class="st">&quot;when repo deactivation succeeds&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;marks repo as deactivated&quot;</span> <span class="kw">do</span>
+      activator.deactivate
+
+      expect(repo.reload).not_to be_active
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;removes GitHub hook&quot;</span> <span class="kw">do</span>
+      activator.deactivate
+
+      expect(github_api).to have_received(<span class="st">:remove_hook</span>)
+      expect(repo.hook_id).to be_nil
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;returns true&quot;</span> <span class="kw">do</span>
+      expect(activator.deactivate).to be <span class="dv">true</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>The biggest issue of this code is readability. As with other types of fixtures, <code>let</code> obscures the code by introducing a <a href="#fixtures">Mystery Guest</a>. Having the test’s dependencies declared at the top of the file make it difficult to know which dependencies are required for each test. If you added more tests to this test group, they may not all have the same dependencies.</p>
+<p>This code also has another, more sneaky problem. If you noticed, there’s a subtle use of <code>let!</code> when we declare <code>github_api</code>. We used <code>let!</code>, because the first and last example need it to be stubbed, but don’t need to reference it in the test. Since <code>let!</code> forces the execution of the code in the block, we’ve introduced the possibility for a potential future bug. If we write a new test in this context, this code will now be run for that test case, even if we didn’t intend for that to happen. This is a recipe for unintentionally slowing down your suite. Additionally, we’ve now added an implicit dependency to all current and future tests in its context, which has the potential to make these tests brittle.</p>
+<p>If we were to scroll down so that the <code>let</code> statements go off the screen, our examples would look like this:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">context <span class="st">&quot;when repo deactivation succeeds&quot;</span> <span class="kw">do</span>
+  it <span class="st">&quot;marks repo as deactivated&quot;</span> <span class="kw">do</span>
+    activator.deactivate
+
+    expect(repo.reload).not_to be_active
+  <span class="kw">end</span>
+
+  it <span class="st">&quot;removes GitHub hook&quot;</span> <span class="kw">do</span>
+    activator.deactivate
+
+    expect(github_api).to have_received(<span class="st">:remove_hook</span>)
+    expect(repo.hook_id).to be_nil
+  <span class="kw">end</span>
+
+  it <span class="st">&quot;returns true&quot;</span> <span class="kw">do</span>
+    expect(activator.deactivate).to be <span class="dv">true</span>
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>We now have no context as to what is happening in these tests. It’s impossible to tell what your test depends on, and what else is happening behind the scenes. In a large file, you’d have to go back and forth between your tests and <code>let</code> statements, which is slow and error prone. In poorly organized files, you might even have multiple levels of nesting and dispersed <code>let</code> statements, which make it almost impossible to know which <code>let</code> statements are associated with each test.</p>
+<p>So what’s the solution to these problems? Instead of using RSpec’s DSL, you can use plain old Ruby. Variables, methods, and classes! A refactored version of the code above might look like this:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby">describe <span class="dt">RepoActivator</span>, <span class="st">&quot;#deactivate&quot;</span> <span class="kw">do</span>
+  context <span class="st">&quot;when repo deactivation succeeds&quot;</span> <span class="kw">do</span>
+    it <span class="st">&quot;marks repo as deactivated&quot;</span> <span class="kw">do</span>
+      repo = create(<span class="st">:repo</span>)
+      activator = build_activator(repo: repo)
+      stub_github_api
+
+      activator.deactivate
+
+      expect(repo.reload).not_to be_active
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;removes GitHub hook&quot;</span> <span class="kw">do</span>
+      repo = create(<span class="st">:repo</span>)
+      activator = build_activator(repo: repo)
+      github_api = stub_github_api
+
+      activator.deactivate
+
+      expect(github_api).to have_received(<span class="st">:remove_hook</span>)
+      expect(repo.hook_id).to be_nil
+    <span class="kw">end</span>
+
+    it <span class="st">&quot;returns true&quot;</span> <span class="kw">do</span>
+      activator = build_activator
+      stub_github_api
+
+      result = activator.deactivate
+
+      expect(result).to be <span class="dv">true</span>
+    <span class="kw">end</span>
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> build_activator(token: <span class="st">&quot;githubtoken&quot;</span>, repo: build(<span class="st">:repo</span>))
+    allow(<span class="dt">RemoveHoundFromRepo</span>).to receive(<span class="st">:run</span>)
+    allow(<span class="dt">AddHoundToRepo</span>).to receive(<span class="st">:run</span>).and_return(<span class="dv">true</span>)
+
+    <span class="dt">RepoActivator</span>.new(github_token: token, repo: repo)
+  <span class="kw">end</span>
+
+  <span class="kw">def</span> stub_github_api
+    hook = double(<span class="st">:hook</span>, id: <span class="dv">1</span>)
+    api = double(<span class="st">:github_api</span>, remove_hook: <span class="dv">true</span>)
+    allow(api).to receive(<span class="st">:create_hook</span>).and_yield(hook)
+    allow(<span class="dt">GithubApi</span>).to receive(<span class="st">:new</span>).and_return(api)
+    api
+  <span class="kw">end</span>
+<span class="kw">end</span></code></pre>
+<p>By calling these Ruby constructs directly from our test, it’s easy to see what is being generated in the test, and if we need to dig deeper into what’s happening, we can follow the method call trail all the way down. In effect, we’ve optimized for communication rather than terseness. We’ve also avoided implicitly adding unnecessary dependencies to each of our tests.</p>
+<p>Another thing to note is that while we build the activator and GitHub API stub in methods external to our tests, we do the assignment within the tests themselves. Memoizing the value to an instance variable in the external method is simply a reimplementation of <code>let</code>, and suffers the same pitfalls.</p>
+</section>
+<section id="using-factories-like-fixtures" class="level2">
+<h2>Using Factories Like Fixtures</h2>
+<p>While <a href="#factorygirl">we prefer factories over fixtures</a>, it is important to use factories appropriately. Occasionally, we’ll see test suites that use <code>FactoryGirl</code> as if they were fixtures which is the worst of both worlds. Factories are great because they are flexible, however they can be slower than fixtures. When you use them like fixtures, they can be slow and inflexible.</p>
+<p>There are two ways we’ve seen people use factories like fixtures:</p>
+<section id="defining-more-attributes-than-you-need" class="level3">
+<h3>Defining more attributes than you need</h3>
+<p>When you define your factories, you declare all of the attributes the factory should be initialized with. When you define more attributes than you need on a factory, these attributes are set by default in every test, and can subtly cause side effects. This become harder to reason about as your test suite grows, especially if many of your tests end up depending on this default behavior.</p>
+<p>Factories are intended to be customized directly in the test case you are using them in. If your test case depends on a model with a specific attribute, that attribute should be set on the model when it is initialized in the test case, not in some other file. When you set these attributes in the test case itself, it is far easier to understand the causes and effects of what happens in your test. It also makes it easier to see what conditions are important for the test to pass.</p>
+<p>When defining your factories, define the <em>minimum number of attributes for the model to pass validations</em>. Here’s an example:</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">User</span> &lt; <span class="dt">ActiveRecord</span>::<span class="dt">Base</span>
+  validates <span class="st">:password_digest</span>, presence: <span class="dv">true</span>
+  validates <span class="st">:username</span>, presence: <span class="dv">true</span>, uniqueness: <span class="dv">true</span>
+<span class="kw">end</span>
+
+<span class="co"># DON'T do this</span>
+
+factory <span class="st">:user</span> <span class="kw">do</span>
+  sequence(<span class="st">:username</span>) { |n| <span class="st">&quot;username</span><span class="ot">#{</span>n<span class="ot">}</span><span class="st">&quot;</span> }
+  password_digest <span class="st">&quot;password</span>
+<span class="st">  name &quot;</span><span class="dt">Donald</span> <span class="dt">Duck</span><span class="st">&quot;</span>
+<span class="st">  age 24</span>
+<span class="st">end</span>
+
+<span class="st"># DO this</span>
+
+<span class="st">factory :user do</span>
+<span class="st">  sequence(:username) { |n| &quot;</span>username<span class="co">#{n}&quot; }</span>
+  password_digest <span class="st">&quot;password</span>
+<span class="st">end</span></code></pre>
+</section>
+<section id="defining-multiple-factories-for-a-single-model" class="level3">
+<h3>Defining multiple factories for a single model</h3>
+<p>The second way people use factories like fixtures is less common but more reminiscent of fixtures. Essentially, we’ve seen people write multiple factories for a single model, each defining attributes that are specific to the factories use case. This brings us back to the fixture problem where important attributes for our test cases are defined outside the scope of our tests.</p>
+<p>When you need to group differentiate models with specific functionalities, use traits to define the <em>necessary</em> attributes. That way, you can define one or more traits directly in the test, and only bring in the traits you need. Again, by defining only the attributes that are necessary, we can avoid coupling to default attributes in our tests.</p>
+<pre class="sourceCode ruby"><code class="sourceCode ruby"><span class="kw">class</span> <span class="dt">User</span> &lt; <span class="dt">ActiveRecord</span>::<span class="dt">Base</span>
+  validates <span class="st">:password_digest</span>, presence: <span class="dv">true</span>
+  validates <span class="st">:username</span>, presence: <span class="dv">true</span>, uniqueness: <span class="dv">true</span>
+<span class="kw">end</span>
+
+<span class="co"># DON'T do this</span>
+
+factory <span class="st">:admin_user</span>, <span class="kw">class</span>: <span class="dt">User</span> <span class="kw">do</span>
+  sequence(<span class="st">:username</span>) { |n| <span class="st">&quot;admin_username</span><span class="ot">#{</span>n<span class="ot">}</span><span class="st">&quot;</span> }
+  password_digest <span class="st">&quot;password</span>
+<span class="st">  name &quot;</span><span class="dt">Mr</span>. <span class="dt">Admin</span><span class="st">&quot;</span>
+<span class="st">  age 27</span>
+<span class="st">  admin true</span>
+<span class="st">end</span>
+
+<span class="st">factory :normal_user, class: User do</span>
+<span class="st">  sequence(:username) { |n| &quot;</span>username<span class="co">#{n}&quot; }</span>
+  password_digest <span class="st">&quot;password</span>
+<span class="st">  name &quot;</span><span class="dt">Donald</span> <span class="dt">Duck</span><span class="st">&quot;</span>
+<span class="st">  age 24</span>
+<span class="st">  admin false</span>
+<span class="st">end</span>
+
+<span class="st"># DO this</span>
+
+<span class="st">factory :user do</span>
+<span class="st">  sequence(:username) { |n| &quot;</span>username<span class="co">#{n}&quot; }</span>
+  password_digest <span class="st">&quot;password</span>
+
+<span class="st">  trait :admin do</span>
+<span class="st">    admin true</span>
+<span class="st">  end</span>
+<span class="st">end</span></code></pre>
 </section>
 </section>
 </section>
