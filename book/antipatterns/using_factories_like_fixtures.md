@@ -37,7 +37,7 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Donald Duck"
   age 24
 end
@@ -46,7 +46,7 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
 end
 ```
 
