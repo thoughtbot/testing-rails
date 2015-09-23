@@ -74,7 +74,7 @@ end
 
 factory :admin_user, class: User do
   sequence(:username) { |n| "admin_username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Mr. Admin"
   age 27
   admin true
@@ -82,7 +82,7 @@ end
 
 factory :normal_user, class: User do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Donald Duck"
   age 24
   admin false
@@ -92,7 +92,7 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
 
   trait :admin do
     admin true
