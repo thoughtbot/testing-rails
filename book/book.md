@@ -39,6 +39,8 @@
 
 <<[intermediate_testing/external_services.md]
 
+<<[intermediate_testing/page_objects.md]
+
 # Antipatterns
 
 <<[antipatterns/slow_tests.md]
