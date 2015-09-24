@@ -41,6 +41,8 @@
 
 <<[intermediate_testing/page_objects.md]
 
+<<[intermediate_testing/ci.md]
+
 # Antipatterns
 
 <<[antipatterns/slow_tests.md]
