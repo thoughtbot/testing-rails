@@ -52,3 +52,5 @@
 <<[antipatterns/let.md]
 
 <<[antipatterns/using_factories_like_fixtures.md]
+
+<<[antipatterns/false_positives.md]
