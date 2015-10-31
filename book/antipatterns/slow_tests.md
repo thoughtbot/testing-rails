@@ -102,7 +102,7 @@ Like Fixtures](#using-factories-like-fixtures).
 
 Feature specs are slow. They have to boot up a fake browser and navigate around.
 They're particularly slow when using a JavaScript driver which incurs even more
-overhead. While you do want an feature spec to cover every user facing feature
+overhead. While you do want a feature spec to cover every user facing feature
 of your application, you also don't want to duplicate coverage.
 
 Many times, feature specs are written to cover both _happy paths_ and _sad
