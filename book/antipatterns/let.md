@@ -64,16 +64,51 @@ test's dependencies declared at the top of the file make it difficult to know
 which dependencies are required for each test. If you added more tests to this
 test group, they may not all have the same dependencies.
 
-This code also has another, more sneaky problem. If you noticed, there's a
-subtle use of `let!` when we declare `github_api`. We used `let!`, because the
-first and last example need it to be stubbed, but don't need to reference it in
-the test. Since `let!` forces the execution of the code in the block, we've
-introduced the possibility for a potential future bug. If we write a new test in
-this context, this code will now be run for that test case, even if we didn't
-intend for that to happen. This is a recipe for unintentionally slowing down
-your suite. Additionally, we've now added an implicit dependency to all current
-and future tests in its context, which has the potential to make these tests
-brittle.
+`let` can also lead to [brittle tests](#brittle-tests). Since your tests are
+reliant on objects that are created far from the test cases themselves, it's
+easy for somebody to change the setup code unaware of how it will effect each
+individual test. This issue is compounded when we override definitions in nested
+contexts:
+
+```ruby
+describe RepoActivator, "#deactivate" do
+  let(:repo) {
+    create(:repo)
+  }
+
+  let(:activator) {
+    allow(RemoveHoundFromRepo).to receive(:run)
+    allow(AddHoundToRepo).to receive(:run).and_return(true)
+
+    RepoActivator.new(github_token: "githubtoken", repo: repo)
+  }
+
+  ...
+
+  context "when repo deactivation succeeds" do
+    let(:repo) {
+      create(:repo, some_attribute: "some value")
+    }
+
+    ...
+  end
+end
+```
+
+In the above scenario, we have overriden the definition of `repo` in our nested
+context. While we can assume that a direct call to `repo` will return this
+locally defined `repo`, what happens when we call `activator`, which also
+depends on `repo` but is declared in the outer context? Does it call the `repo`
+that is defined in the same context, or does it call the `repo` that is defined
+in the same context of our test?
+
+This code has another, more sneaky problem. If you noticed, there's a subtle use
+of `let!` when we declare `github_api`. We used `let!`, because the first and
+last example need it to be stubbed, but don't need to reference it in the test.
+Since `let!` forces the execution of the code in the block, we've introduced the
+possibility for a potential future bug. If we write a new test in this context,
+this code will now be run for that test case, even if we didn't intend for that
+to happen. This is a recipe for unintentionally slowing down your suite.
 
 If we were to scroll down so that the `let` statements go off the screen,
 our examples would look like this:
