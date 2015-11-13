@@ -26,7 +26,12 @@ instantiates an object based on our factory definition, however `.build` does
 not save the object. Whenever possible, we're going to favor `.build` over
 `.create`, as persisting to the database is one of the slowest operations in our
 tests. In this case, we don't care that the record was saved before we increment
-it so we use `.build`.
+it so we use `.build`. If we needed a persisted object (for example, if we
+needed to query for it), we would use `.create`.
+
+In this test, we do end up saving the object when we call `#upvote`, so we need
+a valid object. This is why we use a factory instead of just `Link.new`. If we
+didn't need a the link to be valid we would favor `Link.new`.
 
 Our _verify_ step is slightly different than we've seen in our feature specs.
 This time, we aren't asserting against the `page` (we don't even have access to
