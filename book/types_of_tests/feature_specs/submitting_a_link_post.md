@@ -87,7 +87,7 @@ feature. It gets printed out when we run our specs in `documentation` format.
 Inside our feature block, we have a `#scenario` block:
 
 ```ruby
-scenario "and sees the shortened URL" do
+scenario "they see the page for the submitted link" do
   ...
 end
 ```
