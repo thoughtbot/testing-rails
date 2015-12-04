@@ -9,23 +9,21 @@ For example, Ember is biased towards [Qunit][qunit].
 
 These all come with with some way of running the suite via the command-line. You
 can then build a custom Rake task that will run both your RSpec and JavaScript
-suites. The Rake task can be run both locally and on CI.
+suites. The Rake task can be run both locally and on CI. RSpec provides a `rake
+spec` task that you can hook into.
 
 In your `Rakefile`:
 
 ```ruby
-# creates `:rspec` task that runs RSpec suite
-RSpec::Core::RakeTask.new(:rspec)
-
 # the jasmine:ci task is provided by the jasmine gem
-task :full_suite, ["jasmine:ci", "rspec"]
+task :full_suite, ["jasmine:ci", "spec"]
 ```
 
 You can also override the default rake task to run both suites with just `rake`:
 
 ```ruby
 task(:default).clear
-task default: ["jasmin:ci", "rspec"]
+task default: ["jasmin:ci", "spec"]
 ```
 
 [jasmine]: https://jasmine.github.io/
