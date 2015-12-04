@@ -1373,7 +1373,12 @@ instantiates an object based on our factory definition, however `.build` does
 not save the object. Whenever possible, we're going to favor `.build` over
 `.create`, as persisting to the database is one of the slowest operations in our
 tests. In this case, we don't care that the record was saved before we increment
-it so we use `.build`.
+it so we use `.build`. If we needed a persisted object (for example, if we
+needed to query for it), we would use `.create`.
+
+In this test, we do end up saving the object when we call `#upvote`, so we need
+a valid object. This is why we use a factory instead of just `Link.new`. If we
+didn't need a the link to be valid we would favor `Link.new`.
 
 Our _verify_ step is slightly different than we've seen in our feature specs.
 This time, we aren't asserting against the `page` (we don't even have access to
@@ -2645,6 +2650,480 @@ API. The only way to catch this is by running the app against the real API,
 either via the test suite (slow and unreliable), in CI, or manually in a staging
 environment.
 
+## Levels of Abstraction
+
+[Capybara][capybara] gives us many useful commands and matchers for testing an
+application from a user's point of view. However, these feature specs can easily
+become hard to grok after adding just a few interactions. The best way to combat
+this is to write feature specs at a **single level of abstraction**.
+
+[capybara]: https://github.com/jnicklas/capybara
+
+This test has many different levels of abstraction.
+
+```ruby
+# spec/features/user_marks_todo_complete_spec.rb
+feature "User marks todo complete" do
+  scenario "updates todo as completed" do
+    sign_in # straight forward
+    create_todo "Buy milk" # makes sense
+
+    # huh? HTML list element ... text ... some kind of button?
+    find(".todos li", text: "Buy milk").click_on "Mark complete"
+
+    # hmm... styles ... looks like we want completed todos to look different?
+    expect(page).to have_css(".todos li.completed", text: "Buy milk")
+  end
+
+  def create_todo(name)
+    click_on "Add new todo"
+    fill_in "Name", with: name
+    click_on "Submit"
+  end
+end
+```
+
+The first two lines are about a user's interactions with the app. Then the next
+lines drop down to a much lower level, messing around with CSS selectors and
+text values. Readers of the test have to parse all these implementation details
+just to understand _what_ is going on.
+
+Ideally, the spec should read almost like pseudo-code:
+
+```ruby
+# spec/features/user_marks_todo_complete_spec.rb
+feature "User marks todo complete" do
+  scenario "updates todo as completed" do
+    # sign_in
+    # create_todo
+    # mark todo complete
+    # assert todo is completed
+  end
+end
+```
+
+The two most common ways to get there are **extract method** and **page
+objects**.
+
+### Extract Method
+
+The **extract method** pattern is commonly used to hide implementation details
+and to maintain a single level of abstraction in both source code and specs.
+
+Consider the following spec:
+
+```ruby
+feature "User marks todo complete" do
+  scenario "updates todo as completed" do
+    sign_in
+    create_todo "Buy milk"
+
+    mark_complete "Buy milk"
+
+    expect(page).to have_completed_todo "Buy milk"
+  end
+
+  def create_todo(name)
+    click_on "Add new todo"
+    fill_in "Name", with: name
+    click_on "Submit"
+  end
+
+  def mark_complete(name)
+    find(".todos li", text: name).click_on "Mark complete"
+  end
+
+  def have_completed_todo(name)
+    have_css(".todos li.completed", text: name)
+  end
+end
+```
+
+Notice how obvious it is what happens in the scenario now. There is no more
+context switching, no need to pause and decipher CSS selectors. The interactions
+are front and center now. Details such as selectors or the exact text of that
+link we need to click are largely irrelevant to readers of our spec and will
+likely change often. If we really want to know what is entailed in marking a
+todo as "complete", the definition is available just a few lines below.
+Convenient yet out of the way.
+
+Although this does make code reusable if we were to write another scenario, the
+primary purpose of extracting these methods is not to reduce duplication.
+Instead, it serves as a way to bundle lower-level steps and name them as
+higher-level concepts. Communication and maintainability are the main goal here,
+easier code-reuse is a useful side effect.
+
+### Page objects
+
+In a RESTful Rails application, the interactions on a page are usually based
+around a single resource. Notice how all of the extracted methods in the example
+above are about todos (creating, completing, expecting to be complete) and most
+of them have `todo` in their name.
+
+What if instead of having a bunch of helper methods that did things with todos,
+we encapsulated that logic into some sort of object that manages todo
+interactions on the page? This is the **page object** pattern.
+
+Our feature spec (with a few more scenarios) might look like:
+
+```ruby
+scenario "create a new todo" do
+  sign_in_as "person@example.com"
+  todo = todo_on_page
+
+  todo.create
+
+  expect(todo).to be_visible
+end
+
+scenario "view only todos the user has created" do
+  sign_in_as "other@example.com"
+  todo = todo_on_page
+
+  todo.create
+  sign_in_as "me@example.com"
+
+  expect(todo).not_to be_visible
+end
+
+scenario "complete my todos" do
+  sign_in_as "person@example.com"
+  todo = todo_on_page
+
+  todo.create
+  todo.mark_complete
+
+  expect(todo).to be_complete
+end
+
+scenario "mark completed todo as incomplete" do
+  sign_in_as "person@example.com"
+  todo = todo_on_page
+
+  todo.create
+  todo.mark_complete
+  todo.mark_incomplete
+
+  expect(todo).not_to be_complete
+end
+
+def todo_on_page
+  TodoOnPage.new("Buy eggs")
+end
+```
+
+The todo is now front and center in all these tests. Notice that the tests now
+only say _what_ to do. In fact, this test is no longer web-specific. It could be
+for a mobile or desktop app for all we know. Low-level details, the _how_, are
+encapsulated in the `TodoOnPage` object. Using an object instead of simple
+helper methods allows us to build more complex interactions, extract state and
+extract private methods. Notice that the helper methods all required the same
+title parameter that is now instance state on the page object.
+
+Let's take a look at what an implementation of `TodoOnPage` might look like.
+
+```ruby
+class TodoOnPage
+  include Capybara::DSL
+
+  attr_reader :title
+
+  def initialize(title)
+    @title = title
+  end
+
+  def create
+    click_link "Create a new todo"
+    fill_in "Title", with: title
+    click_button "Create"
+  end
+
+  def mark_complete
+    todo_element.click_link "Complete"
+  end
+
+  def mark_incomplete
+    todo_element.click_link "Incomplete"
+  end
+
+  def visible?
+    todo_list.has_css? "li", text: title
+  end
+
+  def complete?
+    todo_list.has_css? "li.complete", text: title
+  end
+
+  private
+
+  def todo_element
+    find "li", text: title
+  end
+
+  def todo_list
+    find "ol.todos"
+  end
+end
+```
+
+This takes advantage of RSpec's "magic" matchers, which turn predicate methods
+such as `#visible?` and `#complete?` into matchers like `be_visible` and
+`be_complete`. Also, we include `Capybara::DSL` to get all of the nice Capybara
+helper methods.
+
+## Continuous Integration
+
+Tests are a great way to make sure an application is working correctly. However,
+they only provide that value if you remember to run them. It's easy to forget to
+re-run the test suite after rebasing or to think that everything is fine because
+the change you made was so small it couldn't *possibly* break anything (hint: it
+probably did).
+
+Enter **continuous integration**, or **CI** for short. Continuous integration is
+a service that watches a repository and automatically tries to build the project
+and run the test suite every time new code is committed. Ideally it runs on a
+separate machine with a clean environment to prevent "works on my machine" bugs.
+It should build all branches, allowing you to know if a branch is "green" before
+merging it.
+
+There are many CI providers that will build Rails apps and run their test suite
+for you. Our current favorite is [CircleCI](https://circleci.com/).
+
+GitHub can run your CI service against commits in a pull request and will
+integrate the result into the pull request status, clearly marking it as passing
+or failing.
+
+Continuous integration is a great tool for preventing broken code from getting
+into `master` and to keep nagging you if any broken code does get there. It is
+not a replacement for running tests locally. Having tests that are so slow that
+you only run them on CI is a red flag and [should be addressed](#slowtests).
+
+CI can be used for **continuous deployment**, automatically deploying all green
+builds of `master`.
+
+## JavaScript
+
+At some point, your application is going to use JavaScript. However, all the
+tools we've explored so far are written for testing Ruby code. How can we test
+this behavior?
+
+### Webdrivers
+
+At the integration level, we don't care what technology is being used under the
+hood. The focus is on the user interactions instead. By default, RSpec/Capybara
+run feature specs using `Rack::Test` which simulates a browser. Although it is
+fast, it cannot execute JavaScript.
+
+In order to execute JavaScript, we need a real browser. Capybara allows using
+different **drivers** instead of the default of `Rack::Test`.
+[Selenium][selenium] is a wrapper around Firefox that gives us programmatic
+access. If you configure Capybara to use Selenium, you will see a real Firefox
+window open up and run through your scenarios.
+
+The downside to Selenium is that it is slow and somewhat brittle (depends on
+your version of Firefox installed). To address these issues, it is more common
+to use a **headless driver** such as [Capybara Webkit][webkit] or
+[Poltergeist][poltergeist]. These are real browser engines but without the UI.
+By packaging the engine and not rendering the UI, these headless browsers can
+improve speed by a significant factor as well as avoid breaking every time you
+upgrade your browser.
+
+[selenium]: https://github.com/seleniumhq/selenium
+[webkit]: https://github.com/thoughtbot/capybara-webkit
+[poltergeist]: https://github.com/teampoltergeist/poltergeist
+
+To use a JavaScript driver (Capybara Webkit in this case) you install its gem
+and then point Capybara to the driver. In your `rails_helper.rb`, you want to
+add the following:
+
+```ruby
+Capybara.javascript_driver = :webkit
+```
+
+Then, you want to add a `:js` tag to all scenarios that need to be run with
+JavaScript.
+
+```ruby
+feature "A user does something" do
+  scenario "and sees a success message", :js do
+    # test some things
+  end
+end
+```
+
+### Cleaning up test data
+
+By default, RSpec wraps all database interactions in a **database transaction**.
+This means that any records created are only accessible within the transaction
+and any changes made to the database will be rolled back at the end of the
+transaction. Using transactions allows each test to start from a clean
+environment with a fresh database.
+
+This pattern breaks down when dealing with JavaScript in feature specs. Real
+browsers (headless or not) run in a separate thread from your Rails app and are
+therefore _outside_ of the database transaction. Requests made from these
+drivers will not have access to the data created within the specs.
+
+We can disable transactions in our feature specs but now we need to clean up
+manually. This is where [**Database Cleaner**][database cleaner] comes in.
+Database Cleaner offers three different ways to handle cleanup:
+
+1. Transactions
+2. Deletion (via the SQL `DELETE` command)
+3. Truncation (via the SQL `TRUNCATE` command)
+
+Transactions are much faster but won't work with JavaScript drivers. The speed
+of deletion and truncation depends on the table structure and how many tables
+have been populated. Generally speaking, SQL `DELETE` is slower the more rows
+there are in your table while `TRUNCATE` has more of a fixed cost.
+
+[database cleaner]: https://github.com/DatabaseCleaner/database_cleaner
+
+First, disable transactions in `rails_helper.rb`.
+
+```ruby
+RSpec.configure do |config|
+  config.use_transactional_fixtures = false
+end
+```
+
+Our default database cleaner config looks like this:
+
+```ruby
+RSpec.configure do |config|
+  config.before(:suite) do
+    DatabaseCleaner.clean_with(:deletion)
+  end
+
+  config.before(:each) do
+    DatabaseCleaner.strategy = :transaction
+  end
+
+  config.before(:each, js: true) do
+    DatabaseCleaner.strategy = :deletion
+  end
+
+  config.before(:each) do
+    DatabaseCleaner.start
+  end
+
+  config.after(:each) do
+    DatabaseCleaner.clean
+  end
+end
+```
+
+We clean the database with deletion once before running the suite. Specs default
+to cleaning up via a transaction with the exception of those that use a
+JavaScript driver. This gets around the issues created by using a real browser
+while still keeping the clean up fast for most specs.
+
+### Asynchronous helpers
+
+One of the nice things about JavaScript is that you can add interactivity to a
+web page in a non-blocking manner. For example, you open a modal when a user
+clicks a button. Although it takes a couple seconds (you have a sweet
+animation), the user's mouse isn't frozen and they still feel in control.
+
+This breaks if we try to test via Capybara:
+
+```ruby
+first(".modal-open").click
+first(".confirm").click
+```
+
+It will click the button but the next interaction will fail because the modal
+hasn't finished loading. The ideal behavior would be for the test to wait until
+the modal finished loading. We could add a `sleep` here in the test but this
+would slow the test down a lot and won't guarantee that the modal is loaded.
+
+Luckily, Capybara provides some helpers for this exact situation. Finders such
+as `first` or `all` return `nil` if there is no such element. `find` on the
+other hand will keep trying until the element shows up on the page or a maximum
+wait time has been exceeded (default 2 seconds). While a `sleep 2` will stop
+your tests for two seconds on every run, these finders will only wait as long as
+it needs to before moving on.
+
+We can rewrite the previous test as:
+
+```ruby
+# this will take a few seconds to open modal
+find(".modal-open").click
+
+# this will keep trying to find up to two seconds
+find(".confirm").click
+```
+
+Similar to `find`, most of Capybara's matchers support waiting. _You should
+always use the matchers and not try to call the query methods directly._
+
+```ruby
+# This will _not_ retry
+expect(page.has_css?(".active")).to eq false
+
+# This _will_ retry if the element isn't initially on the page
+expect(page).not_to have_active_class
+```
+
+### AJAX
+
+In addition to just manipulating the UI, it is common to use JavaScript to
+communicate asynchronously with the server. Testing this in a feature spec can
+be tricky.
+
+Remember, feature specs test the application from a _user's perspective_. As a
+user, I don't care whether you use AJAX or not, that is an implementation
+detail. What I _do_ care about is the functionality of the application.
+Therefore, _feature tests should assert on the UI only_.
+
+So how do you test AJAX via the UI? Imagine we are trying to test an online
+document app where you can click a button and your document is saved via AJAX.
+How does that interaction look like for the user?
+
+```ruby
+click_on "Save"
+
+# This will automatically wait up to 2 seconds
+# giving AJAX time to complete
+expect(page).to have_css(".notice", text: "Document saved!)
+```
+
+Almost all AJAX interactions will change the UI in some manner for usability
+reasons. Assert on these changes and take advantage of Capybara's auto-waiting
+matchers.
+
+### Unit tests
+
+If you have more than just a little jQuery scattered throughout your
+application, you are probably going to want to unit test some of it. As with
+other things JavaScript, there is an overwhelming amount of choice.
+We've had success with both [Jasmine][jasmine] and [Mocha][mocha]. Some
+front-end frameworks will push you very strongly towards a particular libary.
+For example, Ember is biased towards [Qunit][qunit].
+
+These all come with with some way of running the suite via the command-line. You
+can then build a custom Rake task that will run both your RSpec and JavaScript
+suites. The Rake task can be run both locally and on CI. RSpec provides a `rake
+spec` task that you can hook into.
+
+In your `Rakefile`:
+
+```ruby
+# the jasmine:ci task is provided by the jasmine gem
+task :full_suite, ["jasmine:ci", "spec"]
+```
+
+You can also override the default rake task to run both suites with just `rake`:
+
+```ruby
+task(:default).clear
+task default: ["jasmin:ci", "spec"]
+```
+
+[jasmine]: https://jasmine.github.io/
+[mocha]: https://mochajs.org/
+[qunit]: https://qunitjs.com/
+
 # Antipatterns
 
 ## Slow tests
@@ -2751,7 +3230,7 @@ Like Fixtures](#using-factories-like-fixtures).
 
 Feature specs are slow. They have to boot up a fake browser and navigate around.
 They're particularly slow when using a JavaScript driver which incurs even more
-overhead. While you do want an feature spec to cover every user facing feature
+overhead. While you do want a feature spec to cover every user facing feature
 of your application, you also don't want to duplicate coverage.
 
 Many times, feature specs are written to cover both _happy paths_ and _sad
@@ -3185,16 +3664,51 @@ test's dependencies declared at the top of the file make it difficult to know
 which dependencies are required for each test. If you added more tests to this
 test group, they may not all have the same dependencies.
 
-This code also has another, more sneaky problem. If you noticed, there's a
-subtle use of `let!` when we declare `github_api`. We used `let!`, because the
-first and last example need it to be stubbed, but don't need to reference it in
-the test. Since `let!` forces the execution of the code in the block, we've
-introduced the possibility for a potential future bug. If we write a new test in
-this context, this code will now be run for that test case, even if we didn't
-intend for that to happen. This is a recipe for unintentionally slowing down
-your suite. Additionally, we've now added an implicit dependency to all current
-and future tests in its context, which has the potential to make these tests
-brittle.
+`let` can also lead to [brittle tests](#brittle-tests). Since your tests are
+reliant on objects that are created far from the test cases themselves, it's
+easy for somebody to change the setup code unaware of how it will effect each
+individual test. This issue is compounded when we override definitions in nested
+contexts:
+
+```ruby
+describe RepoActivator, "#deactivate" do
+  let(:repo) {
+    create(:repo)
+  }
+
+  let(:activator) {
+    allow(RemoveHoundFromRepo).to receive(:run)
+    allow(AddHoundToRepo).to receive(:run).and_return(true)
+
+    RepoActivator.new(github_token: "githubtoken", repo: repo)
+  }
+
+  ...
+
+  context "when repo deactivation succeeds" do
+    let(:repo) {
+      create(:repo, some_attribute: "some value")
+    }
+
+    ...
+  end
+end
+```
+
+In the above scenario, we have overriden the definition of `repo` in our nested
+context. While we can assume that a direct call to `repo` will return this
+locally defined `repo`, what happens when we call `activator`, which also
+depends on `repo` but is declared in the outer context? Does it call the `repo`
+that is defined in the same context, or does it call the `repo` that is defined
+in the same context of our test?
+
+This code has another, more sneaky problem. If you noticed, there's a subtle use
+of `let!` when we declare `github_api`. We used `let!`, because the first and
+last example need it to be stubbed, but don't need to reference it in the test.
+Since `let!` forces the execution of the code in the block, we've introduced the
+possibility for a potential future bug. If we write a new test in this context,
+this code will now be run for that test case, even if we didn't intend for that
+to happen. This is a recipe for unintentionally slowing down your suite.
 
 If we were to scroll down so that the `let` statements go off the screen,
 our examples would look like this:
@@ -3333,7 +3847,7 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Donald Duck"
   age 24
 end
@@ -3342,7 +3856,7 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
 end
 ```
 
@@ -3370,7 +3884,7 @@ end
 
 factory :admin_user, class: User do
   sequence(:username) { |n| "admin_username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Mr. Admin"
   age 27
   admin true
@@ -3378,7 +3892,7 @@ end
 
 factory :normal_user, class: User do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
   name "Donald Duck"
   age 24
   admin false
@@ -3388,10 +3902,30 @@ end
 
 factory :user do
   sequence(:username) { |n| "username#{n}" }
-  password_digest "password
+  password_digest "password"
 
   trait :admin do
     admin true
   end
 end
 ```
+
+# False Positives
+
+Occasionally, you'll run into a case where a feature doesn't work while the test
+for it is incorrectly passing. This usually manifests itself when the test is
+written after the production code in question. The solution here is to always
+follow Red, Green, Refactor. If you don't see your test fail before seeing it
+turn green, you can't be certain that the change you are making is the thing
+that actually got the test to pass, or if it is passing for some other reason.
+By seeing it fail first, you know that once you get it to pass it is passing
+because of the changes you made.
+
+Sometimes, you need to figure out how to get your production code working before
+writing your test. This may be because you aren't sure how the production
+code is going to work and you just want to try some things out before you know
+what you're going to test. When you do this and you go back to write your test,
+be sure that you comment out the production code that causes the feature to
+work. This way, you can write your test and see it fail. Then, when you comment
+in the code to make it pass, you'll be certain that _that_ was the thing to make
+the test pass, so your test is valid.
