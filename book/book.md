@@ -43,6 +43,8 @@
 
 <<[intermediate_testing/ci.md]
 
+<<[intermediate_testing/javascript.md]
+
 # Antipatterns
 
 <<[antipatterns/slow_tests.md]
