@@ -7,7 +7,7 @@ We've had success with both [Jasmine][jasmine] and [Mocha][mocha]. Some
 front-end frameworks will push you very strongly towards a particular libary.
 For example, Ember is biased towards [Qunit][qunit].
 
-These all come with with some way of running the suite via the command-line. You
+These all come with some way of running the suite via the command-line. You
 can then build a custom Rake task that will run both your RSpec and JavaScript
 suites. The Rake task can be run both locally and on CI. RSpec provides a `rake
 spec` task that you can hook into.
