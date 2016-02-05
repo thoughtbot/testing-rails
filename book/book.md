@@ -55,6 +55,8 @@
 
 <<[antipatterns/brittle_tests.md]
 
+<<[antipatterns/duplication.md]
+
 <<[antipatterns/testing_implementation_details.md]
 
 <<[antipatterns/let.md]
