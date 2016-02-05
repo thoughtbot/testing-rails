@@ -33,6 +33,8 @@
 
 <<[types_of_tests/helper_specs.md]
 
+<<[types_of_tests/mailer_specs.md]
+
 # Intermediate Testing
 
 <<[intermediate_testing/testing_in_isolation.md]

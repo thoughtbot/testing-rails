@@ -1,11 +1,9 @@
 ## Levels of Abstraction
 
-[Capybara][capybara] gives us many useful commands and matchers for testing an
+Capybara gives us many useful commands and matchers for testing an
 application from a user's point of view. However, these feature specs can easily
 become hard to grok after adding just a few interactions. The best way to combat
 this is to write feature specs at a **single level of abstraction**.
-
-[capybara]: https://github.com/jnicklas/capybara
 
 This test has many different levels of abstraction.
 

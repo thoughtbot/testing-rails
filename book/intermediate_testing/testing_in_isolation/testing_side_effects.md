@@ -11,10 +11,6 @@ test the mailer or the filesystem in this spec.  Instead, we'd like to just test
 that we told the mailer to send the email at the appropriate time and trust that
 it will do its job correctly like proper object-oriented citizens.
 
-Say we send an email to moderators when a new link is added to the site:
-
-` app/controllers/links_controller.rb@b6755ba1b764d1d1
-
 RSpec provides two ways of "listening" for and expecting on  messages sent to
 collaborators. These are **mocking** and **spying**.
 
@@ -22,7 +18,7 @@ collaborators. These are **mocking** and **spying**.
 
 When **mocking** an interaction with a collaborator we set up an expectation
 that it will receive a given message and then exercise the system to see if that
-does indeed happen.
+does indeed happen. Let's return to our example of sending emails to moderators:
 
 ` spec/controllers/links_controller_spec.rb@b6755ba1b764d1d1
 
