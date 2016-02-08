@@ -64,3 +64,5 @@
 <<[antipatterns/using_factories_like_fixtures.md]
 
 <<[antipatterns/false_positives.md]
+
+<<[antipatterns/stubbing_the_system_under_test.md]

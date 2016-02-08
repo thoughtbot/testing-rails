@@ -1,4 +1,4 @@
-# False Positives
+## False Positives
 
 Occasionally, you'll run into a case where a feature doesn't work while the test
 for it is incorrectly passing. This usually manifests itself when the test is
