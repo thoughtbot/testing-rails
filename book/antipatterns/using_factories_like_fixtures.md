@@ -13,7 +13,7 @@ There are two ways we've seen people use factories like fixtures:
 When you define your factories, you declare all of the attributes the factory
 should be initialized with. When you define more attributes than you need on a
 factory, these attributes are set by default in every test, and can subtly cause
-side effects. This become harder to reason about as your test suite grows,
+side effects. This becomes harder to reason about as your test suite grows,
 especially if many of your tests end up depending on this default behavior.
 
 Factories are intended to be customized directly in the test case you are using
@@ -58,7 +58,7 @@ factories for a single model, each defining attributes that are specific to the
 factories use case. This brings us back to the fixture problem where important
 attributes for our test cases are defined outside the scope of our tests.
 
-When you need to group differentiate models with specific functionalities, use
+When you need to group different models with specific functionalities, use
 traits to define the _necessary_ attributes. That way, you can define one or
 more traits directly in the test, and only bring in the traits you need. Again,
 by defining only the attributes that are necessary, we can avoid coupling to
