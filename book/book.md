@@ -66,3 +66,5 @@
 <<[antipatterns/false_positives.md]
 
 <<[antipatterns/stubbing_the_system_under_test.md]
+
+<<[antipatterns/testing_behavior_not_implementation.md]
