@@ -18,8 +18,9 @@ Please provide feedback via [GitHub][].
 
 ## Paperback
 
-We use [Paperback][] for generating eBooks. To build the book, follow [the instructions for setting
-up Paperback] and be sure to have Docker running.
+We use [Paperback][] (internal to thoughtbot) for generating eBooks. To build
+the book, follow [the instructions for setting up Paperback] and be sure to have
+Docker running.
 
 [Paperback]: https://github.com/thoughtbot/paperback
 [the instructions for setting up Paperback]:
