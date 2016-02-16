@@ -29,9 +29,11 @@ tests. In this case, we don't care that the record was saved before we increment
 it so we use `.build`. If we needed a persisted object (for example, if we
 needed to query for it), we would use `.create`.
 
-In this test, we do end up saving the object when we call `#upvote`, so we need
-a valid object. This is why we use a factory instead of just `Link.new`. If we
-didn't need a the link to be valid we would favor `Link.new`.
+You might ask, "Why not use `Link.new`?". Even though we don't save our record
+immediately, our call to `link.upvote` will, so we need a valid `Link`. Rather
+than worrying about what attributes need to be set to instantiate a valid
+instance, we depend on our factory definition as the single source of truth on
+how to build a valid record.
 
 Our _verify_ step is slightly different than we've seen in our feature specs.
 This time, we aren't asserting against the `page` (we don't even have access to
