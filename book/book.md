@@ -61,6 +61,8 @@
 
 <<[antipatterns/let.md]
 
+<<[antipatterns/bloated_factories.md]
+
 <<[antipatterns/using_factories_like_fixtures.md]
 
 <<[antipatterns/false_positives.md]
