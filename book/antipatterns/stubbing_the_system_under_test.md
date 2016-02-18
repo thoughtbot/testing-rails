@@ -96,7 +96,7 @@ describe CreditCard, "#create_charge" do
     allow(gateway_client).to receive(:post)
       .with("/cards/4111/charges", amount: 100)
       .and_return(expected)
-    credit_card = CreditCard.new(payment_client, "4111")
+    credit_card = CreditCard.new(gateway_client, "4111")
 
     result = credit_card.create_charge(100)
 
