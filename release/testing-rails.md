@@ -586,7 +586,7 @@ feature. It gets printed out when we run our specs in `documentation` format.
 Inside our feature block, we have a `#scenario` block:
 
 ```ruby
-scenario "and sees the shortened URL" do
+scenario "they see the page for the submitted link" do
   ...
 end
 ```
@@ -1376,9 +1376,11 @@ tests. In this case, we don't care that the record was saved before we increment
 it so we use `.build`. If we needed a persisted object (for example, if we
 needed to query for it), we would use `.create`.
 
-In this test, we do end up saving the object when we call `#upvote`, so we need
-a valid object. This is why we use a factory instead of just `Link.new`. If we
-didn't need a the link to be valid we would favor `Link.new`.
+You might ask, "Why not use `Link.new`?". Even though we don't save our record
+immediately, our call to `link.upvote` will, so we need a valid `Link`. Rather
+than worrying about what attributes need to be set to instantiate a valid
+instance, we depend on our factory definition as the single source of truth on
+how to build a valid record.
 
 Our _verify_ step is slightly different than we've seen in our feature specs.
 This time, we aren't asserting against the `page` (we don't even have access to
@@ -1879,6 +1881,106 @@ It is worth noting here that this is not a pure unit test since it depends on
 both the helper *and* the `Link` model. In a later chapter, we will talk about
 **doubles** and how they can be used to isolate code from its collaborators.
 
+## Mailer Specs
+
+As with every other part of your Rails application, mailers should be tested at
+an integration and unit level to ensure they work and will continue to work as
+expected.
+
+Say we send an email to moderators when a new link is added to the site.
+Following an outside-in development process, we'll start with an integration
+level test. In this case, a controller spec:
+
+```ruby
+# spec/controllers/links_controller_spec.rb
+context "when the link is valid" do
+  it "sends an email to the moderators" do
+    valid_link = double(save: true)
+    allow(Link).to receive(:new).and_return(valid_link)
+    allow(LinkMailer).to receive(:new_link)
+
+    post :create, link: { attribute: "value" }
+
+    expect(LinkMailer).to have_received(:new_link).with(valid_link)
+  end
+end
+```
+
+This test introduces some new methods. We'll discuss the intricacies of how this
+works in [testing side effects](#testing-side-effects). For now, just realize
+that we've set up an expectation to check that when a link is created, we call
+the method `LinkMailer#new_link`. With this in place, we can be comfortable that
+when we enter the conditional in our controller, that method is called. We'll
+test what that method does in our unit test.
+
+The above spec would lead to a controller action like this:
+
+```ruby
+# app/controllers/links_controller.rb
+def create
+  @link = Link.new(link_params)
+
+  if @link.save
+    LinkMailer.new_link(@link)
+    redirect_to link_path(@link)
+  else
+    render :new
+  end
+end
+```
+
+This now forces us to write a new class and method `LinkMailer#new_link`.
+
+#### LinkMailer#new_link
+
+Before writing our test we'll install the [`email-spec`] gem, which provides a
+number of helpful matchers for testing mailers, such as:
+
+* `deliver_to`
+* `deliver_from`
+* `have_subject`
+* `have_body_text`
+
+[`email-spec`]: https://github.com/email-spec/email-spec
+
+With the gem installed and setup, we can write our test:
+
+```ruby
+# spec/mailers/link_mailer_spec.rb
+require "rails_helper"
+
+RSpec.describe LinkMailer, "#new_link" do
+  it "delivers a new link notification email" do
+    link = build(:link)
+
+    email = LinkMailer.new_link(link)
+
+    expect(email).to deliver_to(LinkMailer::MODERATOR_EMAILS)
+    expect(email).to deliver_from("noreply@reddat.com")
+    expect(email).to have_subject("New link submitted")
+    expect(email).to have_body_text("A new link has been posted")
+  end
+end
+```
+
+This test confirms our `to`, `from`, `subject` and `body` are what we expect.
+That should give us enough coverage to be confident in this mailer, and allow us
+to write our mailer code:
+
+```ruby
+# app/mailers/link_mailer.rb
+class LinkMailer < ApplicationMailer
+  MODERATOR_EMAILS = "moderators@example.com"
+
+  default from: "noreply@reddat.com"
+
+  def new_link(link)
+    @link = link
+    mail(to: MODERATOR_EMAILS, subject: "New link submitted")
+  end
+end
+```
+
 # Intermediate Testing
 
 ## Testing in isolation
@@ -2119,42 +2221,6 @@ test the mailer or the filesystem in this spec.  Instead, we'd like to just test
 that we told the mailer to send the email at the appropriate time and trust that
 it will do its job correctly like proper object-oriented citizens.
 
-Say we send an email to moderators when a new link is added to the site:
-
-```ruby
-# app/controllers/links_controller.rb
-class LinksController < ApplicationController
-  def index
-    @links = Link.hottest_first
-  end
-
-  def show
-    @link = Link.find(params[:id])
-  end
-
-  def new
-    @link = Link.new
-  end
-
-  def create
-    @link = Link.new(link_params)
-
-    if @link.save
-      LinkMailer.new_link(@link)
-      redirect_to link_path(@link)
-    else
-      render :new
-    end
-  end
-
-  private
-
-  def link_params
-    params.require(:link).permit(:title, :url)
-  end
-end
-```
-
 RSpec provides two ways of "listening" for and expecting on  messages sent to
 collaborators. These are **mocking** and **spying**.
 
@@ -2162,7 +2228,7 @@ collaborators. These are **mocking** and **spying**.
 
 When **mocking** an interaction with a collaborator we set up an expectation
 that it will receive a given message and then exercise the system to see if that
-does indeed happen.
+does indeed happen. Let's return to our example of sending emails to moderators:
 
 ```ruby
 # spec/controllers/links_controller_spec.rb
@@ -2652,12 +2718,10 @@ environment.
 
 ## Levels of Abstraction
 
-[Capybara][capybara] gives us many useful commands and matchers for testing an
+Capybara gives us many useful commands and matchers for testing an
 application from a user's point of view. However, these feature specs can easily
 become hard to grok after adding just a few interactions. The best way to combat
 this is to write feature specs at a **single level of abstraction**.
-
-[capybara]: https://github.com/jnicklas/capybara
 
 This test has many different levels of abstraction.
 
@@ -3101,7 +3165,7 @@ We've had success with both [Jasmine][jasmine] and [Mocha][mocha]. Some
 front-end frameworks will push you very strongly towards a particular libary.
 For example, Ember is biased towards [Qunit][qunit].
 
-These all come with with some way of running the suite via the command-line. You
+These all come with some way of running the suite via the command-line. You
 can then build a custom Rake task that will run both your RSpec and JavaScript
 suites. The Rake task can be run both locally and on CI. RSpec provides a `rake
 spec` task that you can hook into.
@@ -3488,6 +3552,62 @@ place. We'll usually start by extracting common functionality to a method. If
 the functionality is more complex we'll then consider extracting a page
 object.
 
+## Duplication
+
+Test code can fall victim to many of the same traps as production code. One of
+the worst offenders is duplication. Those who don't recognize this slowly see
+productivity drop as it becomes necessary to modify multiple tests with small
+changes to the production codebase.
+
+Just like you refactor your production code, you should refactor test code, lest
+it become a burden. In fact, refactoring tests should be handled at the same
+time as refactoring production code — during the refactoring step in _Red, Green,
+Refactor_.
+
+You can use all the tools you use in object oriented programming to DRY up
+duplicate test code, such as extracting to methods and classes. For feature
+specs, you may consider using [Page Objects](#page-objects) to clean up
+repetitive interactions.
+
+You may also consider using i18n to have a single source of truth for all copy.
+i18n can help make your tests resilient, as minor copy tweaks won't require any
+changes to your test or even production code. This is of course a secondary
+benefit to the fact that it allows you to localize your app to multiple
+languages!
+
+### Extracting Helper Methods
+
+Common helper methods should be extracted to `spec/support`, where they can be
+organized by utility and automatically included into a specific subset of the
+tests. Here's an example from [FormKeep's](https://formkeep.com) test suite:
+
+```ruby
+# spec/support/kaminari_helper.rb
+module KaminariHelper
+  def with_kaminari_per_page(value, &block)
+    old_value = Kaminari.config.default_per_page
+    Kaminari.config.default_per_page = value
+    block.call
+  ensure
+    Kaminari.config.default_per_page = old_value
+  end
+end
+
+RSpec.configure do |config|
+  config.include KaminariHelper, type: :request
+end
+```
+
+The above code allows us to configure Kaminari's `default_per_page` setting in
+the block, and ensures it is set back to the original value. The
+`RSpec.configure` bit includes our module into all request specs. This file (and
+others in `spec/support`) is automatically included in our `rails_helper.rb`:
+
+```ruby
+# spec/rails_helper.rb
+Dir[Rails.root.join("spec/support/**/*.rb")].each { |f| require f }
+```
+
 ## Testing Implementation Details
 
 One metric of a solid test suite is that you shouldn't have to modify your tests
@@ -3808,31 +3928,19 @@ in methods external to our tests, we do the assignment within the tests
 themselves. Memoizing the value to an instance variable in the external method
 is simply a reimplementation of `let`, and suffers the same pitfalls.
 
-## Using Factories Like Fixtures
+## Bloated Factories
 
-While [we prefer factories over fixtures](#factorygirl), it is important to use factories
-appropriately. Occasionally, we'll see test suites that use `FactoryGirl` as if
-they were fixtures which is the worst of both worlds. Factories are great
-because they are flexible, however they can be slower than fixtures. When you
-use them like fixtures, they can be slow and inflexible.
-
-There are two ways we've seen people use factories like fixtures:
-
-### Defining more attributes than you need
-
-When you define your factories, you declare all of the attributes the factory
-should be initialized with. When you define more attributes than you need on a
-factory, these attributes are set by default in every test, and can subtly cause
-side effects. This become harder to reason about as your test suite grows,
-especially if many of your tests end up depending on this default behavior.
+A factory is the single source of truth for what it takes to instantiate a
+minimally valid object. When you define more attributes than you need on a
+factory, you implicitly couple yourself to these values every time you use the
+factory. These attributes can cause subtle side effects and make your tests
+harder to reason about and change as time goes on.
 
 Factories are intended to be customized directly in the test case you are using
-them in. If your test case depends on a model with a specific attribute, that
-attribute should be set on the model when it is initialized in the test case,
-not in some other file. When you set these attributes in the test case itself,
-it is far easier to understand the causes and effects of what happens in your
-test. It also makes it easier to see what conditions are important for the test
-to pass.
+them in. This allows you to communicate what is significant about a record
+directly in the test. When you set these attributes in the test case itself, it
+is easier to understand the causes and effects in the test. This is useful for
+both test maintenance and communication about the feature or unit under test.
 
 When defining your factories, define the _minimum number of attributes for the
 model to pass validations_. Here's an example:
@@ -3848,8 +3956,8 @@ end
 factory :user do
   sequence(:username) { |n| "username#{n}" }
   password_digest "password"
-  name "Donald Duck"
-  age 24
+  name "Donald Duck" # according to our model, this attribute is optional
+  age 24 # so is this
 end
 
 # DO this
@@ -3860,57 +3968,103 @@ factory :user do
 end
 ```
 
-### Defining multiple factories for a single model
+## Using Factories Like Fixtures
 
-The second way people use factories like fixtures is less common but more
-reminiscent of fixtures. Essentially, we've seen people write multiple
-factories for a single model, each defining attributes that are specific to the
-factories use case. This brings us back to the fixture problem where important
-attributes for our test cases are defined outside the scope of our tests.
-
-When you need to group differentiate models with specific functionalities, use
-traits to define the _necessary_ attributes. That way, you can define one or
-more traits directly in the test, and only bring in the traits you need. Again,
-by defining only the attributes that are necessary, we can avoid coupling to
-default attributes in our tests.
+While [we prefer factories over fixtures](#factorygirl), it is important to use
+factories appropriately to get any benefit. Occasionally we'll see test suites
+create factory definitions as if they were fixtures:
 
 ```ruby
-class User < ActiveRecord::Base
-  validates :password_digest, presence: true
-  validates :username, presence: true, uniqueness: true
+factory :pam, class: User do
+  name "Pam"
+  manager false
 end
 
-# DON'T do this
+factory :michael, class: User do
+  name "Michael"
+  manager true
+end
+```
 
-factory :admin_user, class: User do
-  sequence(:username) { |n| "admin_username#{n}" }
-  password_digest "password"
-  name "Mr. Admin"
-  age 27
-  admin true
+This is the worst of both worlds. Factories are great because they're flexible,
+however they are slower than fixtures. When you use them like fixtures, they are
+slow, inflexible, _and_ cryptic. As the factory definitions grow, they tend to
+violate the rule of having a minimal set of attributes for a valid records. In
+addition to the [issues that brings](#bloated-factories), it becomes difficult
+to remember which factories return which attributes.
+
+Instead of creating multiple factory definitions to group related functionality,
+use traits or nested factories.
+
+Traits allow you to compose attributes within the test itself.
+
+```ruby
+factory :message do
+  body "What's up?"
+
+  trait :read do
+    read_at { 1.month.ago }
+  end
 end
 
-factory :normal_user, class: User do
-  sequence(:username) { |n| "username#{n}" }
-  password_digest "password"
-  name "Donald Duck"
-  age 24
-  admin false
+# In the test
+build_stubbed(:message, :read) # it's clear what we're getting here
+```
+
+You may even consider pulling traits out to the global level for reuse between
+factories:
+
+```ruby
+factory :message do
+  # noop
 end
 
-# DO this
+factory :notification do
+  # noop
+end
 
+trait :read do
+  read_at { 1.month.ago }
+end
+
+# In the test
+build_stubbed(:message, :read)
+build_stubbed(:notification, :read)
+```
+
+In addition to traits, you can extend functionality through inheritance with
+nested factories:
+
+```ruby
 factory :user do
   sequence(:username) { |n| "username#{n}" }
   password_digest "password"
 
-  trait :admin do
-    admin true
+  factory :subscriber do
+    subscribed true
   end
 end
+
+# In the test
+build_stubbed(:subscriber)
 ```
 
-# False Positives
+This allows you to better communicate state and still maintain a single source
+of knowledge about the necessary attributes to build a user.
+
+```ruby
+# This is good
+build_stubbed(:user, :subscribed)
+
+# This is better
+build_stubbed(:subscriber)
+```
+
+Note that nesting is not as composable as traits since you can only build an
+object from a single factory. Traits, however, are more flexible as multiple can
+be used at the same time.
+
+## False Positives
 
 Occasionally, you'll run into a case where a feature doesn't work while the test
 for it is incorrectly passing. This usually manifests itself when the test is
@@ -3929,3 +4083,222 @@ be sure that you comment out the production code that causes the feature to
 work. This way, you can write your test and see it fail. Then, when you comment
 in the code to make it pass, you'll be certain that _that_ was the thing to make
 the test pass, so your test is valid.
+
+## Stubbing the System Under Test
+
+As we've learned, [stubbing](#stubbing) allows us to isolate code we are testing
+from other complex behavior. Sometimes, we are tempted to stub a method inside
+the class we are testing. If a behavior is so complicated that we feel compelled
+to stub it out in a test, that behavior is its own concern and should be
+encapsulated in its own class.
+
+Imagine we are interacting with a payment service that allows us to create and
+refund charges to a credit card. Interacting with the service is similar for
+each of these requests, so we implement a method `#create_transaction` that we
+can reuse when creating and refunding charges:
+
+```ruby
+class CreditCard
+  def initialize(id)
+    @id = id
+  end
+
+  def create_charge(amount)
+    create_transaction("/cards/#{@id}/charges", amount: amount)
+  end
+
+  def refund_charge(transaction_id)
+    create_transaction("/cards/#{@id}/charges/#{transaction_id}/refund")
+  end
+
+  private
+
+  def create_transaction(path, data = {})
+    response = Net::HTTP.start("payments.example.com") do |http|
+      post = Net::HTTP::Post.new(path)
+      post.body = data.to_json
+      http.request(post)
+    end
+
+    data = JSON.parse(response.body)
+    Response.new(transaction_id: data["transaction_id"])
+  end
+end
+```
+
+`#create_transaction` makes an HTTP request to our payment gateway's endpoint,
+parses the response data, and returns a new response object with the
+`transaction_id` from the returned data. This is a relatively complicated
+method, and we've learned before that external web requests can be unreliable
+and slow, so we decide to stub this out in our tests for `#create_charge`
+and `#refund_charge`.
+
+An initial test for `#create_charge` might look like this:
+
+```ruby
+describe CreditCard, "#create_charge" do
+  it "returns transaction IDs on success" do
+    credit_card = CreditCard.new("4111")
+    expected = double("expected")
+    allow(credit_card).to receive(:create_transaction)
+      .with("/cards/4111/charges", amount: 100)
+      .and_return(expected)
+
+    result = credit_card.create_charge(100)
+
+    expect(result).to eq(expected)
+  end
+end
+```
+
+This test will work, but it carries some warning signs about how we've factored
+our code. The first is we're stubbing a private method. [As we've
+learned](#private-methods), tests shouldn't even be aware of private methods. If
+you're paying attention, you'll also notice that we've stubbed the system under
+test.
+
+This stub breaks up our `CreditCard` class in an ad hoc manner. We've defined
+behavior in our `CreditCard` class definition that we are currently trying to
+test, and now we've introduced new behavior with our stub. Instead of splitting
+this behavior just in our test, we should separate concerns deliberately in our
+production code.
+
+If we reexamine our code, we'll realize that our `CreditCard` class does in fact
+have multiple concerns. One, is acting as our credit card, which can be charged
+and refunded. The second, alluded to by our need to stub it, is formatting and
+requesting data from our payment gateway. By extracting this behavior to a
+`GatewayClient` class, we can create a clear distinction between our two
+responsibilities, make each easier to test, and make our `GatewayClient`
+functionality easier to reuse.
+
+Let's extract the class and inject it into our `CreditCard` instance as a
+dependency. First, the refactored test:
+
+```ruby
+describe CreditCard, "#create_charge" do
+  it "returns transaction IDs on success" do
+    expected = double("expected")
+    gateway_client = double("gateway_client")
+    allow(gateway_client).to receive(:post)
+      .with("/cards/4111/charges", amount: 100)
+      .and_return(expected)
+    credit_card = CreditCard.new(gateway_client, "4111")
+
+    result = credit_card.create_charge(100)
+
+    expect(result).to eq(expected)
+  end
+end
+```
+
+Now, we are no longer stubbing the SUT. Instead, we've injected a double
+that responds to a method `post` and returns our canned response. Now, we need
+to refactor our code to match our expectations.
+
+```ruby
+class CreditCard
+  def initialize(client, id)
+    @id = id
+    @client = client
+  end
+
+  def create_charge(amount)
+    @client.post("/cards/#{@id}/charges", amount: amount)
+  end
+
+  def refund_charge(transaction_id)
+    @client.post("/cards/#{@id}/charges/#{transaction_id}/refund")
+  end
+end
+
+class GatewayClient
+  def post(path, data = {})
+    response = Net::HTTP.start("payments.example.com") do |http|
+      post = Net::HTTP::Post.new(path)
+      post.body = data.to_json
+      http.request(post)
+    end
+
+    data = JSON.parse(response.body)
+    Response.new(transaction_id: data["transaction_id"])
+  end
+end
+```
+
+Whenever you are tempted to stub the SUT, take a moment to think about why you
+didn't want to set up the required state. If you could easily set up the state
+with a factory or helper, prefer that and remove the stub. If the method you are
+stubbing has complicated behavior which is difficult to retest, use that as a
+cue to extract a new class, and stub the new dependency.
+
+## Testing Behavior, Not Implementation
+
+We've said previously that tests should assert on behavior, not implementation.
+But, what happens when our tests _do_ know too much about how code is
+implemented? Let's look at an example:
+
+```ruby
+# app/models/item.rb
+class Item < ActiveRecord::Base
+  def self.unique_names
+    pluck(:name).uniq.sort
+  end
+end
+
+# spec/models/item_spec.rb
+describe Item, ".unique_names" do
+  it "returns a list of sorted, unique, Item names" do
+    create(:item, name: "Gamma")
+    create(:item, name: "Gamma")
+    create(:item, name: "Alpha")
+    create(:item, name: "Beta")
+
+    expected = Item.pluck(:name).uniq.sort
+
+    expect(Item.unique_names).to eq expected
+  end
+end
+```
+
+The implementation of the method under test is `pluck(:name).uniq.sort`, and
+we're testing it against `Item.pluck(:name).uniq.sort`. In essence, we've
+repeated the logic, or implementation, of the code directly in our test. There
+are a couple issues with this.
+
+For one, if we change how we are getting names in the future — say we change the
+underlying field name to `some_name` — we'll have to change the expectation in
+our test, even though our expectation hasn't changed. While this isn't the
+biggest concern, if our test suite has many instances of this it can become
+strenuous to maintain.
+
+Second and more importantly, this test is weak and potentially incorrect. If our
+logic is wrong in our production code, it's likely also wrong in our test,
+however the test would still be green because our test matches our production
+code.
+
+Instead of testing the implementation of the code, we should test it's behavior.
+A better test would look like this:
+
+```ruby
+describe Item, ".unique_names" do
+  it "returns a list of sorted, unique, Item names" do
+    create(:item, name: "Gamma")
+    create(:item, name: "Gamma")
+    create(:item, name: "Alpha")
+    create(:item, name: "Beta")
+
+    expect(Item.unique_names).to eq %w(Alpha Beta Gamma)
+  end
+end
+```
+
+Our refactored test specifies the _behavior_ we expect. When the given items
+exist, we assert that the method returns `["Alpha", "Beta" "Gamma"]`. We aren't
+asserting on logic that could potentially be wrong, but rather how the method
+behaves given the above inputs. As an added benefit, it's easier to see what
+happens when we call `Item.unique_names`.
+
+Testing implementation details is a common symptom of _not_ following TDD. Once
+you know how the code under question will work, it's all too easy to reimplement
+that logic in the test. To avoid this in your codebase, be sure you are writing
+your tests first.
