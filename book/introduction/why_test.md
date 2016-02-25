@@ -15,7 +15,7 @@ new code which broke the old functionality.
 
 A better way is to have the computer check our work. We write software to
 automate our lives, so why not write programs to test our code as well?
-**Automated tests** are small scripts that output whether or not your code works
+**Automated tests** are scripts that output whether or not your code works
 as intended. They verify that our program works now, and will continue to work
 in the future, without humans having to test it by hand. Once you write a test,
 you should be able to reuse it for the lifetime of the code it tests, although
