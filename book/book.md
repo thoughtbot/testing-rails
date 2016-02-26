@@ -70,3 +70,5 @@
 <<[antipatterns/stubbing_the_system_under_test.md]
 
 <<[antipatterns/testing_behavior_not_implementation.md]
+
+<<[antipatterns/testing_code_you_dont_own.md]
