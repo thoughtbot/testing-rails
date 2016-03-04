@@ -62,8 +62,8 @@ understand the entirety of what is happening.
 As applications grow, you'll typically need variations on each of your models
 for different situations. For example, you may have a fixture for every user
 role in your application, then even more users for different roles depending on
-whether or not the user is a member of a specific organization. All these
-possible states a user can be in grow the number of fixtures you will have to
+whether or not the user is a member of a specific organization. All these are
+possible states a user can be in and grow the number of fixtures you will have to
 recall.
 
 #### FactoryGirl
