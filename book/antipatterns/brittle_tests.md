@@ -13,12 +13,12 @@ it:
 
 ### Coupling to copy and the DOM
 
-An easy way to create brittle tests is to hard code copy and DOM attributes into
-your tests. These should be easy to change by yourself, designers, and anyone
-else on the team without breaking any tests. Most often, the important thing
-that you want to test is that a representation of a certain piece of text or
-element is appearing in the right spot at the right time. The actual words and
-elements themselves are unimportant.
+An easy way to create brittle tests is to hard code DOM attributes or **[copy]**
+(user-facing text) into your tests. These should be easy to change by yourself,
+designers, and anyone else on the team without breaking any tests. Most often,
+the important thing that you want to test is that a representation of a certain
+piece of text or element is appearing in the right spot at the right time. The
+actual words and elements themselves are unimportant.
 
 Consider the following:
 
@@ -37,6 +37,8 @@ Now, imagine later on that the text in the template needs to change from
 `Welcome, #{user.name}` to `Hello again, #{user.name}!`. We'd now have to change
 this text in two places, and if we had it in more tests we'd have to change it
 in each one. Let's look at some ways to decouple our tests from our copy.
+
+[copy]: https://en.wikipedia.org/wiki/Copy_(written)
 
 #### Internationalization
 
