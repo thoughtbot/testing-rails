@@ -30,10 +30,10 @@ the page*. The controller test, on the other hand, only tests that the form gets
 re-rendered.
 
 This is one of those situations where you have to make a judgment call. Is it
-important to you to test that not only does the application handles the error,
-but also that an error message shows up on the page? Is it worth trading a slow
-and somewhat duplicated feature spec for a faster controller test that doesn't
-test the UI? Would a request spec be a good compromise option? What about a
+important enough to test that the error message shows up on the page, or is
+testing that the application handles the error sufficient? Is it worth trading a
+slow and partially duplicated feature spec for a faster controller test that
+doesn't test the UI? Would a request spec be a good compromise? What about a
 controller spec plus a view spec to test the both sides independently?
 
 All of these options are valid solutions. Based on the context you will pick the
