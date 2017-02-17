@@ -43,9 +43,11 @@
 
 <<[intermediate_testing/page_objects.md]
 
+<<[intermediate_testing/javascript.md]
+
 <<[intermediate_testing/ci.md]
 
-<<[intermediate_testing/javascript.md]
+<<[intermediate_testing/coverage.md]
 
 # Antipatterns
 
