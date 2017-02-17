@@ -1,5 +1,6 @@
 % Testing Rails
 % Josh Steiner
+% Joël Quenneville
 
 \clearpage
 
@@ -24,7 +25,7 @@ new code which broke the old functionality.
 
 A better way is to have the computer check our work. We write software to
 automate our lives, so why not write programs to test our code as well?
-**Automated tests** are small scripts that output whether or not your code works
+**Automated tests** are scripts that output whether or not your code works
 as intended. They verify that our program works now, and will continue to work
 in the future, without humans having to test it by hand. Once you write a test,
 you should be able to reuse it for the lifetime of the code it tests, although
@@ -1111,8 +1112,8 @@ understand the entirety of what is happening.
 As applications grow, you'll typically need variations on each of your models
 for different situations. For example, you may have a fixture for every user
 role in your application, then even more users for different roles depending on
-whether or not the user is a member of a specific organization. All these
-possible states a user can be in grow the number of fixtures you will have to
+whether or not the user is a member of a specific organization. All these are
+possible states a user can be in and grow the number of fixtures you will have to
 recall.
 
 #### FactoryGirl
@@ -1827,10 +1828,10 @@ the page*. The controller test, on the other hand, only tests that the form gets
 re-rendered.
 
 This is one of those situations where you have to make a judgment call. Is it
-important to you to test that not only does the application handles the error,
-but also that an error message shows up on the page? Is it worth trading a slow
-and somewhat duplicated feature spec for a faster controller test that doesn't
-test the UI? Would a request spec be a good compromise option? What about a
+important enough to test that the error message shows up on the page, or is
+testing that the application handles the error sufficient? Is it worth trading a
+slow and partially duplicated feature spec for a faster controller test that
+doesn't test the UI? Would a request spec be a good compromise? What about a
 controller spec plus a view spec to test the both sides independently?
 
 All of these options are valid solutions. Based on the context you will pick the
@@ -2935,36 +2936,6 @@ such as `#visible?` and `#complete?` into matchers like `be_visible` and
 `be_complete`. Also, we include `Capybara::DSL` to get all of the nice Capybara
 helper methods.
 
-## Continuous Integration
-
-Tests are a great way to make sure an application is working correctly. However,
-they only provide that value if you remember to run them. It's easy to forget to
-re-run the test suite after rebasing or to think that everything is fine because
-the change you made was so small it couldn't *possibly* break anything (hint: it
-probably did).
-
-Enter **continuous integration**, or **CI** for short. Continuous integration is
-a service that watches a repository and automatically tries to build the project
-and run the test suite every time new code is committed. Ideally it runs on a
-separate machine with a clean environment to prevent "works on my machine" bugs.
-It should build all branches, allowing you to know if a branch is "green" before
-merging it.
-
-There are many CI providers that will build Rails apps and run their test suite
-for you. Our current favorite is [CircleCI](https://circleci.com/).
-
-GitHub can run your CI service against commits in a pull request and will
-integrate the result into the pull request status, clearly marking it as passing
-or failing.
-
-Continuous integration is a great tool for preventing broken code from getting
-into `master` and to keep nagging you if any broken code does get there. It is
-not a replacement for running tests locally. Having tests that are so slow that
-you only run them on CI is a red flag and [should be addressed](#slowtests).
-
-CI can be used for **continuous deployment**, automatically deploying all green
-builds of `master`.
-
 ## JavaScript
 
 At some point, your application is going to use JavaScript. However, all the
@@ -3187,6 +3158,66 @@ task default: ["jasmin:ci", "spec"]
 [jasmine]: https://jasmine.github.io/
 [mocha]: https://mochajs.org/
 [qunit]: https://qunitjs.com/
+
+## Continuous Integration
+
+Tests are a great way to make sure an application is working correctly. However,
+they only provide that value if you remember to run them. It's easy to forget to
+re-run the test suite after rebasing or to think that everything is fine because
+the change you made was so small it couldn't *possibly* break anything (hint: it
+probably did).
+
+Enter **continuous integration**, or **CI** for short. Continuous integration is
+a service that watches a repository and automatically tries to build the project
+and run the test suite every time new code is committed. Ideally it runs on a
+separate machine with a clean environment to prevent "works on my machine" bugs.
+It should build all branches, allowing you to know if a branch is "green" before
+merging it.
+
+There are many CI providers that will build Rails apps and run their test suite
+for you. Our current favorite is [CircleCI](https://circleci.com/).
+
+GitHub can run your CI service against commits in a pull request and will
+integrate the result into the pull request status, clearly marking it as passing
+or failing.
+
+Continuous integration is a great tool for preventing broken code from getting
+into `master` and to keep nagging you if any broken code does get there. It is
+not a replacement for running tests locally. Having tests that are so slow that
+you only run them on CI is a red flag and [should be addressed](#slowtests).
+
+CI can be used for **continuous deployment**, automatically deploying all green
+builds of `master`.
+
+## Coverage Reports
+
+In addition to [continuous integration](#continuous-integration), many teams opt
+to generate coverage reports. Coverage reports are generated by running
+alongside your test suite, and monitoring which lines in your application are
+executed. This produces reports allowing you to visualize the frequency in which
+each line is hit, along with high level statistics about each file.
+
+![High Level Coverage Report](images/coverage-report-index.png)
+
+As you can probably guess, you're looking to _approach_ 100% coverage, but take
+note that pursuit of this metric brings diminishing returns. As with most things
+in life, there is nuance, and you may have to make trade-offs.
+
+Furthermore, you want to minimize the `Hits / Line` (see figure 3.1). If you are
+testing the same code path 50+ times, it's a good sign that you may be
+over-testing, which could lead to brittle tests. In a perfect world, you'd have
+100% coverage and only hit each line a single time.
+
+![Coverage Report For File](images/coverage-report-show.png)
+
+Figure 3.2 shows each executed line in green, and lines that the test suite did
+not touch in red. Lines in red are a good target for new tests.
+
+Coverage reports can be generated in a few ways. They can be generated locally
+or [on CI](https://circleci.com/docs/code-coverage/) with the
+[simplecov](https://github.com/colszowka/simplecov) gem. Alternatively, you can
+rely on third party services, such as [Coveralls](https://coveralls.io/) or
+[Code Climate](https://codeclimate.com/).
 
 # Antipatterns
 
@@ -3459,12 +3490,12 @@ it:
 
 ### Coupling to copy and the DOM
 
-An easy way to create brittle tests is to hard code copy and DOM attributes into
-your tests. These should be easy to change by yourself, designers, and anyone
-else on the team without breaking any tests. Most often, the important thing
-that you want to test is that a representation of a certain piece of text or
-element is appearing in the right spot at the right time. The actual words and
-elements themselves are unimportant.
+An easy way to create brittle tests is to hard code DOM attributes or **[copy]**
+(user-facing text) into your tests. These should be easy to change by yourself,
+designers, and anyone else on the team without breaking any tests. Most often,
+the important thing that you want to test is that a representation of a certain
+piece of text or element is appearing in the right spot at the right time. The
+actual words and elements themselves are unimportant.
 
 Consider the following:
 
@@ -3483,6 +3514,8 @@ Now, imagine later on that the text in the template needs to change from
 `Welcome, #{user.name}` to `Hello again, #{user.name}!`. We'd now have to change
 this text in two places, and if we had it in more tests we'd have to change it
 in each one. Let's look at some ways to decouple our tests from our copy.
+
+[copy]: https://en.wikipedia.org/wiki/Copy_(written)
 
 #### Internationalization
 
@@ -4302,3 +4335,105 @@ Testing implementation details is a common symptom of _not_ following TDD. Once
 you know how the code under question will work, it's all too easy to reimplement
 that logic in the test. To avoid this in your codebase, be sure you are writing
 your tests first.
+
+## Testing Code You Don't Own
+
+When writing tests, it can be easy to get carried away and start testing more
+than is necessary. One common mistake is to write unit tests for functionality
+provided by a third-party library. For example:
+
+```ruby
+class User < ActiveRecord::Base
+end
+```
+
+```ruby
+describe "#save" do
+  it "saves the user" do
+    user = User.new
+
+    user.save
+
+    expect(user).to eq User.find(user.id)
+  end
+end
+```
+
+This test is not testing any code you've written but instead is testing
+`ActiveRecord::Base#save` provided by Rails. Rails should already have tests for
+this functionality, so you don't need to test it again.
+
+This may seem obvious, but we've seen this in the wild more than you'd expect.
+
+A more subtle example would be when composing behavior from third-party
+libraries. For example:
+
+```ruby
+require "twitter"
+
+class PublishService
+  def initialize
+    @twitterClient = Twitter::REST::Client.new
+  end
+
+  def publish(message)
+    @twitter_client.update(message)
+  end
+end
+```
+
+```ruby
+describe "#publish" do
+  it "publishes to twitter" do
+    new_tweet_request = stub_request(:post, "api.twitter.com/tweets")
+    service = PublishService.new
+
+    service.publish("message")
+
+    expect(new_tweet_request).to have_been_requested
+  end
+end
+```
+
+This unit test is too broad and tests that the twitter gem is correctly
+implementing HTTP requests. You should expect that the gem's maintainers have
+already tested that. Instead, you can test behavior up to the boundary of the
+third-party code using **stub**.
+
+```
+describe "#publish" do
+  it "publishes to twitter" do
+    client = double(publish: nil)
+    allow(Twitter::REST::Client).to receive(:new).and_return(client)
+    service = PublishService.new
+
+    service.publish("message")
+
+    expect(client).to have_received(:publish).with("message")
+  end
+end
+```
+
+Methods provided by third-party libraries should already be tested by those
+libraries. In fact, they probably test more thoroughly and with more edge cases
+than anything you would write yourself. (Re)writing these tests adds overhead to
+your test suite without providing any additional value so we encourage you not
+to write them at all.
+
+# Conclusion
+
+Congratulations! You've reached the end. Over the course of this book, we've
+learned how testing can be used to ensure the correctness of your code, how to
+use tools to automate your tests, and how to integrate them with Rails.
+
+We've also explored how techniques such as **TDD** and **Outside-in testing**,
+can improve not only your tests but also the implementation of your source code.
+However, poorly written tests can have the opposite effect so we've discussed
+various pitfalls and anti-patterns to avoid. Finally, we've taken a look at
+first principles and how coupling among the objects in a system impacts the
+tests.
+
+You have the tools to write an effective test suite that documents your code,
+catches regressions, and gives you the confidence you need to keep moving. Take
+advantage of this to tame your existing projects and tackle bigger, more
+challenging project!
