@@ -1,5 +1,6 @@
 % Testing Rails
 % Josh Steiner
+% Joël Quenneville
 
 \clearpage
 
