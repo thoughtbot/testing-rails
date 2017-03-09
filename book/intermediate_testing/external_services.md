@@ -210,9 +210,9 @@ get stale so it's generally a good idea to expire them every now and then.
 **Fakes** are little applications that you can boot during your test that will
 mimic a real service. These give you the ability return dynamic responses
 because they actually run code. We commonly write these as Sinatra apps and then
-use Webmock or [capybara-discoball][discoball] load it up the app in tests.
-These fakes are often packaged as gems and many popular services have open
-source test fakes written by the community.
+use Webmock or [capybara-discoball][discoball] load them up in tests.  These
+fakes are often packaged as gems and many popular services have open source test
+fakes written by the community.
 
 A fake for Stripe (payment processor) might look like:
 
