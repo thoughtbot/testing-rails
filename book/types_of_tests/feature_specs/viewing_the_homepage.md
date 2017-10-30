@@ -66,7 +66,7 @@ whether or not the user is a member of a specific organization. All these are
 possible states a user can be in and grow the number of fixtures you will have to
 recall.
 
-#### FactoryGirl
+#### FactoryBot
 
 We've found factories to be a better alternative to fixtures. Rather than
 defining hardcoded data, factories define generators of sorts, with predefined
@@ -75,7 +75,7 @@ the factories in your tests. They look something like this:
 
 ```ruby
 # spec/factories.rb
-FactoryGirl.define do
+FactoryBot.define do
   factory :link do
     title "Testing Rails"
     url "http://testingrailsbook.com"
@@ -96,14 +96,15 @@ what is happening at a glance and are more flexible to different scenarios you
 may want to set up. While factories can be slower than fixtures, we think the
 benefits in flexibility and readability outweigh the costs.
 
-#### Installing FactoryGirl
+#### Installing FactoryBot
 
-To install FactoryGirl, add `factory_girl_rails` to your `Gemfile`:
+To install FactoryBot (formerly FactoryGirl), add `factory_bot_rails` to your
+`Gemfile`:
 
 ```ruby
 group :development, :test do
   ...
-  gem "factory_girl_rails"
+  gem "factory_bot_rails"
   ...
 end
 ```
@@ -118,21 +119,24 @@ group :test do
 end
 ```
 
-Install the new gems and create a new file `spec/support/factory_girl.rb`:
+Install the new gems and create a new file `spec/support/factory_bot.rb`.
+
+**Note:** _ Older versions of this library were named `FactoryGirl` and the file
+was named `factory_girl.rb`.
 
 ` spec/support/factory_girl.rb@944b0967
 
 This file will lint your factories before the test suite is run. That is, it
 will ensure that all the factories you define are valid. While not necessary,
 this is a worthwhile check, especially while you are learning. It's a quick way
-to rest easy that your factories work. Since `FactoryGirl.lint` may end up
+to rest easy that your factories work. Since `FactoryBot.lint` may end up
 persisting some records to the database, we use Database Cleaner to restore the
 state of the database after we've linted our factories. We'll cover Database
 Cleaner in depth later.
 
 Now, this file won't require itself! In your `rails_helper` you'll find some
 commented out code that requires all of the files in `spec/support`. Let's
-comment that in so our FactoryGirl config gets loaded:
+comment that in so our FactoryBot config gets loaded:
 
 ```ruby
 # Uncomment me!
@@ -143,7 +147,7 @@ Last, we need to create our factories file. Create a new file at
 `spec/factories.rb`:
 
 ```ruby
-FactoryGirl.define do
+FactoryBot.define do
 end
 ```
 
@@ -151,7 +155,7 @@ This is where we'll define our factory in the next section.
 
 #### The test
 
-With FactoryGirl set up, we can write our test. We start with a new file at
+With FactoryBot set up, we can write our test. We start with a new file at
 `spec/features/user_views_homepage_spec.rb`.
 
 ```ruby
@@ -170,18 +174,18 @@ blocks.
 link = create(:link)
 ```
 
-To setup our test, we create a link using FactoryGirl's `.create` method, which
+To setup our test, we create a link using FactoryBot's `.create` method, which
 instantiates a new `Link` object with our (currently non-existent) factory
 definition and persists it to the database.
 
-`.create` is loaded into the global context in `spec/support/factory_girl.rb`:
+`.create` is loaded into the global context in `spec/support/factory_bot.rb`:
 
 ```
-config.include FactoryGirl::Syntax::Methods
+config.include FactoryBot::Syntax::Methods
 ```
 
 While we'll be calling `.create` in the global context to keep our code cleaner,
-you may see people calling it more explicitly: `FactoryGirl.create`. This is
+you may see people calling it more explicitly: `FactoryBot.create`. This is
 simply a matter of preference, and both are acceptable.
 
 Now, we'll need to add a factory definition for our `Link` class in
@@ -190,7 +194,7 @@ Now, we'll need to add a factory definition for our `Link` class in
 ` spec/factories.rb@944b0967:2,5
 
 We define a default title and URL to be created for all links created with
-FactoryGirl. We only define defaults for fields that we [validate presence of]. If
+FactoryBot. We only define defaults for fields that we [validate presence of]. If
 you add more than that, your factories can become unmanageable as all of your
 tests become coupled to data defined in your factories that isn't a default.
 Not following this advice is a common mistake in Rails codebases and leads to

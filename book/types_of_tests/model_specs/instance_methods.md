@@ -21,7 +21,7 @@ behavior as a string. Typically, we'll use the name of our method, in this case
 link = build(:link, upvotes: 1)
 ```
 
-`.build` is another FactoryGirl method. It's similar to `.create`, in that it
+`.build` is another FactoryBot method. It's similar to `.create`, in that it
 instantiates an object based on our factory definition, however `.build` does
 not save the object. Whenever possible, we're going to favor `.build` over
 `.create`, as persisting to the database is one of the slowest operations in our
@@ -54,10 +54,10 @@ downvote count, then compare the expected and actual scores.
 
 ` spec/models/link_spec.rb@d4001c148:28,34
 
-In this test, you'll notice that we forgo FactoryGirl and use plain ol'
+In this test, you'll notice that we forgo FactoryBot and use plain ol'
 ActiveRecord to instantiate our object. `#score` depends on `#upvotes` and
 `#downvotes`, which we can set without saving our object. Since we never have to
-save our object, we don't need FactoryGirl to set up a valid record.
+save our object, we don't need FactoryBot to set up a valid record.
 
 With a failing test, we can write our implementation:
 

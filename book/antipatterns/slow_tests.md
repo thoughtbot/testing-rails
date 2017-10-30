@@ -83,15 +83,15 @@ database adds up when running your entire suite.
 When you initialize new objects, try to do so with the least overhead. Depending
 on what you need, you should choose your initialization method in this order:
 
-* `Object.new` - initializes the object without FactoryGirl. Use this when you
+* `Object.new` - initializes the object without FactoryBot. Use this when you
   don't care about any validations or default values.
-* `FactoryGirl.build_stubbed(:object)` - initializes the object with
-  FactoryGirl, setting up default values and associates records using the
+* `FactoryBot.build_stubbed(:object)` - initializes the object with
+  FactoryBot, setting up default values and associates records using the
   `build_stubbed` method. Nothing is persisted to the database.
-* `FactoryGirl.build(:object)` - initializes the object with FactoryGirl,
+* `FactoryBot.build(:object)` - initializes the object with FactoryBot,
   setting up default values and persisting associated records with `create`.
-* `FactoryGirl.create(:object)` - initializes and persists the object with
-  FactoryGirl, setting up default values and persisting associated records with
+* `FactoryBot.create(:object)` - initializes and persists the object with
+  FactoryBot, setting up default values and persisting associated records with
   `create`.
 
 Another thing to look out for is factory definitions with more associations than
