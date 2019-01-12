@@ -4,7 +4,7 @@ Next, we'll test creating a new link via our API:
 
 ` spec/requests/api/v1/links_spec.rb@8ca37400a:23,43
 
-`attributes_for` is another FactoryGirl method, which gives you a hash of the
+`attributes_for` is another FactoryBot method, which gives you a hash of the
 attributes defined in your factory. In this case, it would return:
 
 ```
@@ -17,7 +17,7 @@ indicates that the request succeeded in creating a new record. We then check
 that the last `Link` has the title we expect to ensure it is creating a record
 using the data we submitted.
 
-In the second test, we introduce a new FactoryGirl concept called traits. Traits
+In the second test, we introduce a new FactoryBot concept called traits. Traits
 are specialized versions of factories. To declare them, you nest them under
 a factory definition. This will give them all the attributes of the parent
 factory, as well as any of the modifications specified in the trait. With the
