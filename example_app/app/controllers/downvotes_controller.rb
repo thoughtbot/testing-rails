@@ -3,6 +3,6 @@ class DownvotesController < ApplicationController
     link = Link.find(params[:link_id])
     link.downvote
 
-    redirect_to :back
+    redirect_back(fallback_location:"/")
   end
 end

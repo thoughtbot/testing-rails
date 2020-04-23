@@ -24,7 +24,7 @@ RSpec.describe "POST /api/v1/links" do
   it "creates the link" do
     link_params = attributes_for(:link)
 
-    post "/api/v1/links", link: link_params
+    post "/api/v1/links", params: { link: link_params }
 
     expect(response.status).to eq 201
     expect(Link.last.title).to eq link_params[:title]
@@ -34,7 +34,7 @@ RSpec.describe "POST /api/v1/links" do
     it "returns a 422, with errors" do
       link_params = attributes_for(:link, :invalid)
 
-      post "/api/v1/links", link: link_params
+      post "/api/v1/links", params: { link: link_params }
 
       expect(response.status).to eq 422
       expect(json_body.fetch("errors")).not_to be_empty

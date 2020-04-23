@@ -6,7 +6,7 @@ RSpec.describe LinksController, "#create" do
       invalid_link = double(save: false)
       allow(Link).to receive(:new).and_return(invalid_link)
 
-      post :create, link: { attribute: "value" }
+      post :create, params: { link: { attribute: "value" } }
 
       expect(response).to render_template :new
     end
@@ -18,7 +18,7 @@ RSpec.describe LinksController, "#create" do
       allow(Link).to receive(:new).and_return(valid_link)
       allow(LinkMailer).to receive(:new_link)
 
-      post :create, link: { attribute: "value" }
+      post :create, params: { link: { attribute: "value" } }
 
       expect(LinkMailer).to have_received(:new_link).with(valid_link)
     end

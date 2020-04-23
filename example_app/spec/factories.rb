@@ -4,7 +4,7 @@ FactoryBot.define do
     url { "http://testingrailsbook.com" }
 
     trait :invalid do
-      title nil
+      title { nil }
     end
   end
 end
