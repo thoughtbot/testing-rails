@@ -7,7 +7,7 @@ Because of this, unit tests are usually small and fast.
 
 In the real world, these components don't exist in a vacuum: they have to
 interact with each other. One component may expect a collaborator to have a
-particular interface when in fact it has completely different one. Even though
+particular interface when in fact it has a completely different one. Even though
 all the tests pass, the software as a whole is broken.
 
 This is where **integration tests** come in. These tests exercise the system as
